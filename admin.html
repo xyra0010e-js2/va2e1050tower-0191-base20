@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administrador</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+<body class="bg-slate-900 text-white min-h-screen font-sans">
+
+    <div class="max-w-2xl mx-auto p-6">
+        <header class="flex justify-between items-center mb-8 border-b border-slate-700 pb-4">
+            <h1 class="text-2xl font-bold text-emerald-400 flex items-center gap-2">
+                <i class="ph-fill ph-lock-key"></i> Modo Dios (Admin)
+            </h1>
+            <a href="index.html" target="_blank" class="text-slate-400 hover:text-white text-sm underline">Ver página pública -></a>
+        </header>
+
+        <!-- SECCIÓN 1: Configurar Cabecera -->
+        <section class="bg-slate-800 p-6 rounded-xl mb-6 shadow-lg border border-slate-700">
+            <h2 class="text-lg font-bold mb-4 text-emerald-300">📢 Mensaje de Bienvenida</h2>
+            <div class="space-y-3">
+                <input type="text" id="admin-titulo" placeholder="Título principal de la web" 
+                    class="w-full bg-slate-700 border-none rounded p-3 text-white focus:ring-2 focus:ring-emerald-500 outline-none">
+                <input type="text" id="admin-mensaje" placeholder="Subtítulo o anuncio importante" 
+                    class="w-full bg-slate-700 border-none rounded p-3 text-white focus:ring-2 focus:ring-emerald-500 outline-none">
+                <button onclick="guardarConfig()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded transition-colors">
+                    Actualizar Web
+                </button>
+            </div>
+            <p id="status-config" class="text-xs text-center mt-2 text-gray-500"></p>
+        </section>
+
+        <!-- SECCIÓN 2: Agregar Items -->
+        <section class="bg-slate-800 p-6 rounded-xl shadow-lg border border-slate-700">
+            <h2 class="text-lg font-bold mb-4 text-blue-300">📦 Agregar Nuevo Item</h2>
+            <div class="grid gap-3">
+                <input type="text" id="item-titulo" placeholder="Nombre del producto/noticia" 
+                    class="bg-slate-700 border-none rounded p-3 text-white outline-none">
+                <textarea id="item-desc" placeholder="Descripción..." rows="2"
+                    class="bg-slate-700 border-none rounded p-3 text-white outline-none"></textarea>
+                <div class="flex gap-2">
+                    <input type="number" id="item-precio" placeholder="Precio (opcional)" 
+                        class="bg-slate-700 border-none rounded p-3 text-white outline-none w-1/3">
+                    <button onclick="agregarItem()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded flex-1 transition-colors">
+                        Publicar Item
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Lista de Items Existentes (Para borrar) -->
+        <div class="mt-8">
+            <h3 class="text-sm uppercase tracking-wider text-slate-500 font-bold mb-2">Items Publicados</h3>
+            <ul id="lista-admin" class="space-y-2">
+                <!-- Se llena con JS -->
+            </ul>
+        </div>
+    </div>
+
+    <!-- Script de Lógica Admin -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, doc, setDoc, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        const firebaseConfig = JSON.parse(new URLSearchParams(window.location.search).get('firebase_config') || '{}');
+        const app = initializeApp(typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'mi-app-demo';
+
+        // Necesitamos autenticación para escribir
+        signInAnonymously(auth).then(() => {
+            console.log("Admin conectado");
+            cargarDatosExistentes();
+        });
+
+        // 1. Guardar Configuración General
+        window.guardarConfig = async () => {
+            const titulo = document.getElementById('admin-titulo').value;
+            const mensaje = document.getElementById('admin-mensaje').value;
+            const status = document.getElementById('status-config');
+
+            try {
+                // Guardamos en un documento específico llamado 'main'
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'configuracion', 'main'), {
+                    titulo: titulo,
+                    mensaje: mensaje,
+                    updatedAt: new Date()
+                });
+                status.innerText = "¡Guardado! Revisa tu página pública.";
+                status.className = "text-xs text-center mt-2 text-emerald-400";
+            } catch (e) {
+                console.error(e);
+                status.innerText = "Error al guardar.";
+                status.className = "text-xs text-center mt-2 text-red-400";
+            }
+        };
+
+        // 2. Agregar Nuevo Item
+        window.agregarItem = async () => {
+            const titulo = document.getElementById('item-titulo').value;
+            const desc = document.getElementById('item-desc').value;
+            const precio = document.getElementById('item-precio').value;
+
+            if(!titulo) return alert("Escribe un título");
+
+            try {
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'items'), {
+                    titulo: titulo,
+                    descripcion: desc,
+                    precio: precio,
+                    createdAt: new Date()
+                });
+                // Limpiar campos
+                document.getElementById('item-titulo').value = "";
+                document.getElementById('item-desc').value = "";
+                document.getElementById('item-precio').value = "";
+            } catch (e) {
+                alert("Error al crear item");
+            }
+        };
+
+        // 3. Ver y Borrar Items
+        function cargarDatosExistentes() {
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'items'), (snapshot) => {
+                const lista = document.getElementById('lista-admin');
+                lista.innerHTML = '';
+                
+                snapshot.forEach(documento => {
+                    const data = documento.data();
+                    const li = document.createElement('li');
+                    li.className = "bg-slate-800 p-3 rounded flex justify-between items-center border border-slate-700";
+                    li.innerHTML = `
+                        <span class="text-slate-300">${data.titulo}</span>
+                        <button onclick="borrarItem('${documento.id}')" class="text-red-400 hover:text-red-300 bg-red-900/30 px-3 py-1 rounded text-sm">
+                            <i class="ph-fill ph-trash"></i> Borrar
+                        </button>
+                    `;
+                    lista.appendChild(li);
+                });
+            });
+        }
+
+        // Función global para borrar
+        window.borrarItem = async (id) => {
+            if(confirm("¿Seguro que quieres borrar esto?")) {
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'items', id));
+            }
+        }
+    </script>
+</body>
+</html>
