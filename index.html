@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi App Dinámica</title>
+    <title>Mi Web Internacional</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 </head>
@@ -13,104 +13,89 @@
     <nav class="bg-white shadow p-4 sticky top-0 z-50">
         <div class="max-w-4xl mx-auto flex justify-between items-center">
             <h1 class="text-xl font-bold text-indigo-600 flex items-center gap-2">
-                <i class="ph-fill ph-storefront"></i> Mi Tienda/Blog
+                <i class="ph-fill ph-globe-hemisphere-west"></i> <span id="nav-titulo">Cargando...</span>
             </h1>
-            <!-- Botón simulado de contacto -->
-            <a href="#" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700">Contacto</a>
         </div>
     </nav>
 
     <main class="max-w-4xl mx-auto mt-8 p-4">
         
-        <!-- Mensaje de Bienvenida (Controlado desde Admin) -->
-        <div id="welcome-section" class="bg-indigo-100 rounded-2xl p-8 mb-8 text-center animate-pulse">
-            <h2 id="titulo-web" class="text-3xl font-bold text-indigo-900 mb-2">Cargando título...</h2>
-            <p id="mensaje-web" class="text-indigo-700">Esperando actualización del admin...</p>
+        <!-- Bienvenida -->
+        <div class="bg-indigo-100 rounded-2xl p-8 mb-8 text-center shadow-sm">
+            <h2 id="titulo-web" class="text-3xl font-bold text-indigo-900 mb-2">...</h2>
+            <p id="mensaje-web" class="text-indigo-700">Conectando con el servidor...</p>
         </div>
 
-        <!-- Lista de Contenido (Productos/Noticias) -->
-        <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
-            <i class="ph-duotone ph-newspaper"></i> Novedades
-        </h3>
-        
+        <!-- Lista de Items -->
         <div id="items-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- Aquí aparecerán los items mágicamente -->
-            <div class="text-center text-gray-400 py-10 col-span-full">
-                Cargando datos...
-            </div>
+            <!-- Aquí aparecerán los datos de la nube -->
         </div>
 
     </main>
 
-    <!-- Configuración de Firebase y Lógica -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Configuración automática (No tocar)
-        const firebaseConfig = JSON.parse(new URLSearchParams(window.location.search).get('firebase_config') || '{}');
-        // NOTA: En GitHub Pages real, necesitarás poner tu propia config aquí.
-        // Como estamos en un entorno de prueba, esto funcionará aquí, pero te explicaré
-        // cómo hacerlo en GitHub al final.
+        // -------------------------------------------------------------
+        // 🔴 1. BORRA ESTO Y PEGA TU 'const firebaseConfig' AQUÍ ABAJO 🔴
+        // (Debe quedar: const firebaseConfig = { apiKey: "...", ... }; )
         
-        // Usamos la configuración del entorno si está disponible
-        const app = initializeApp(typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig);
-        const auth = getAuth(app);
+        const firebaseConfig = {
+
+  apiKey: "AIzaSyDr490X-m0dw5wnQaTmyhjjzd1TRJgEMcs",
+
+  authDomain: "mi-web-app-f0523.firebaseapp.com",
+
+  projectId: "mi-web-app-f0523",
+
+  storageBucket: "mi-web-app-f0523.firebasestorage.app",
+
+  messagingSenderId: "509336040232",
+
+  appId: "1:509336040232:web:b41a777c6dd63ba350d61d",
+
+  measurementId: "G-1BFT6DZEV5"
+
+};
+
+        // -------------------------------------------------------------
+
+        // Iniciar Firebase
+        const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'mi-app-demo';
 
-        // 1. Autenticación Anónima (Necesaria para leer la base de datos)
-        signInAnonymously(auth).then(() => {
-            console.log("Conectado como usuario anónimo");
-            iniciarEscucha();
-        }).catch((error) => console.error("Error auth:", error));
+        // 1. Escuchar Configuración (Título y Mensaje)
+        onSnapshot(doc(db, "web", "configuracion"), (doc) => {
+            if (doc.exists()) {
+                const data = doc.data();
+                document.getElementById('nav-titulo').innerText = data.titulo || "Mi Web";
+                document.getElementById('titulo-web').innerText = data.titulo || "Bienvenido";
+                document.getElementById('mensaje-web').innerText = data.mensaje || "Esperando novedades...";
+            }
+        });
 
-        function iniciarEscucha() {
-            // Escuchar el Título y Mensaje Principal
-            const configRef = collection(db, 'artifacts', appId, 'public', 'data', 'configuracion');
-            
-            onSnapshot(configRef, (snapshot) => {
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    if (data.titulo) document.getElementById('titulo-web').innerText = data.titulo;
-                    if (data.mensaje) document.getElementById('mensaje-web').innerText = data.mensaje;
-                    // Quitar animación de carga
-                    document.getElementById('welcome-section').classList.remove('animate-pulse');
-                });
-            });
+        // 2. Escuchar Lista de Items
+        onSnapshot(collection(db, "productos"), (snapshot) => {
+            const container = document.getElementById('items-container');
+            container.innerHTML = ''; // Limpiar
 
-            // Escuchar la lista de Items (Productos/Noticias)
-            const itemsRef = collection(db, 'artifacts', appId, 'public', 'data', 'items');
-            
-            onSnapshot(itemsRef, (snapshot) => {
-                const container = document.getElementById('items-container');
-                container.innerHTML = ''; // Limpiar lista
-
-                if (snapshot.empty) {
-                    container.innerHTML = '<div class="col-span-full text-center text-gray-500">No hay novedades publicadas aún.</div>';
-                    return;
-                }
-
-                snapshot.forEach(doc => {
-                    const item = doc.data();
-                    const card = document.createElement('div');
-                    card.className = "bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow";
-                    card.innerHTML = `
+            snapshot.forEach((doc) => {
+                const item = doc.data();
+                const html = `
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                         <div class="flex justify-between items-start">
-                            <h4 class="font-bold text-lg text-gray-800">${item.titulo || 'Sin título'}</h4>
-                            <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">Nuevo</span>
+                            <h4 class="font-bold text-lg text-gray-800">${item.titulo}</h4>
                         </div>
-                        <p class="text-gray-600 mt-2 text-sm">${item.descripcion || ''}</p>
-                        <div class="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
-                            <span class="font-bold text-indigo-600">${item.precio ? '$' + item.precio : 'Gratis'}</span>
-                            <button class="text-sm text-indigo-600 font-semibold hover:underline">Ver más</button>
+                        <p class="text-gray-600 mt-2 text-sm">${item.desc}</p>
+                        <div class="mt-4 pt-4 border-t border-gray-100 font-bold text-indigo-600">
+                            ${item.precio ? '$' + item.precio : 'Info'}
                         </div>
-                    `;
-                    container.appendChild(card);
-                });
+                    </div>
+                `;
+                container.innerHTML += html;
             });
-        }
+        });
     </script>
 </body>
 </html>
