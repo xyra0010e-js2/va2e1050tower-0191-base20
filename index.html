@@ -3,179 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Primera App Web</title>
-    <!-- Tailwind CSS para estilos rápidos y modernos -->
+    <title>Mi App Dinámica</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Iconos Phosphor -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <style>
-        /* Estilos personalizados adicionales si son necesarios */
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        .glass-effect {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-        }
-    </style>
 </head>
-<body class="bg-gradient-to-br from-indigo-100 to-purple-100 min-h-screen text-gray-800">
+<body class="bg-gray-50 text-gray-800 font-sans">
 
-    <!-- Barra de Navegación -->
-    <nav class="bg-white shadow-md p-4 sticky top-0 z-50">
+    <!-- Navegación -->
+    <nav class="bg-white shadow p-4 sticky top-0 z-50">
         <div class="max-w-4xl mx-auto flex justify-between items-center">
-            <div class="flex items-center gap-2">
-                <i class="ph-fill ph-rocket-launch text-3xl text-indigo-600"></i>
-                <h1 class="text-xl font-bold text-gray-900">Mi App</h1>
-            </div>
-            <button onclick="mostrarMensaje('¡Configuración próximamente!')" class="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                <i class="ph ph-gear text-2xl text-gray-600"></i>
-            </button>
+            <h1 class="text-xl font-bold text-indigo-600 flex items-center gap-2">
+                <i class="ph-fill ph-storefront"></i> Mi Tienda/Blog
+            </h1>
+            <!-- Botón simulado de contacto -->
+            <a href="#" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700">Contacto</a>
         </div>
     </nav>
 
-    <!-- Contenido Principal -->
-    <main class="max-w-md mx-auto mt-10 p-4">
+    <main class="max-w-4xl mx-auto mt-8 p-4">
         
-        <!-- Tarjeta de Bienvenida -->
-        <div class="bg-white rounded-2xl shadow-xl p-6 mb-8 text-center animate-fade-in-down">
-            <h2 class="text-2xl font-bold mb-2 text-indigo-700">¡Hola, Creador!</h2>
-            <p class="text-gray-600 mb-4">Esta es la base de tu nueva aplicación. Aquí tienes un ejemplo interactivo:</p>
-            
-            <!-- Ejemplo Interactivo: Gestor de Ideas/Tareas -->
-            <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                <label class="block text-left text-sm font-semibold text-gray-700 mb-2">Mis Ideas / Tareas</label>
-                
-                <div class="flex gap-2 mb-4">
-                    <input type="text" id="inputIdea" placeholder="Escribe una idea nueva..." 
-                        class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
-                    <button onclick="agregarIdea()" 
-                        class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center justify-center">
-                        <i class="ph-bold ph-plus"></i>
-                    </button>
-                </div>
-
-                <!-- Lista donde aparecen los elementos -->
-                <ul id="listaIdeas" class="space-y-2 text-left">
-                    <!-- Elemento de ejemplo -->
-                    <li class="flex justify-between items-center bg-white p-3 rounded-lg shadow-sm border border-gray-100 group">
-                        <span>Aprender HTML y CSS</span>
-                        <button onclick="eliminarElemento(this)" class="text-red-400 hover:text-red-600 opacity-50 group-hover:opacity-100 transition-opacity">
-                            <i class="ph-fill ph-trash"></i>
-                        </button>
-                    </li>
-                </ul>
-                
-                <div id="mensajeVacio" class="hidden text-center text-gray-400 text-sm mt-4">
-                    ¡No hay ideas todavía! Agrega una arriba.
-                </div>
-            </div>
+        <!-- Mensaje de Bienvenida (Controlado desde Admin) -->
+        <div id="welcome-section" class="bg-indigo-100 rounded-2xl p-8 mb-8 text-center animate-pulse">
+            <h2 id="titulo-web" class="text-3xl font-bold text-indigo-900 mb-2">Cargando título...</h2>
+            <p id="mensaje-web" class="text-indigo-700">Esperando actualización del admin...</p>
         </div>
 
-        <!-- Sección de Características (Grid) -->
-        <div class="grid grid-cols-2 gap-4">
-            <div class="bg-white p-4 rounded-xl shadow-md hover:shadow-lg transition-shadow cursor-pointer" onclick="mostrarMensaje('Sección de Perfil')">
-                <i class="ph-duotone ph-user-circle text-3xl text-purple-500 mb-2"></i>
-                <h3 class="font-bold">Perfil</h3>
-                <p class="text-xs text-gray-500">Gestionar usuario</p>
-            </div>
-            <div class="bg-white p-4 rounded-xl shadow-md hover:shadow-lg transition-shadow cursor-pointer" onclick="mostrarMensaje('Sección de Estadísticas')">
-                <i class="ph-duotone ph-chart-bar text-3xl text-green-500 mb-2"></i>
-                <h3 class="font-bold">Datos</h3>
-                <p class="text-xs text-gray-500">Ver métricas</p>
+        <!-- Lista de Contenido (Productos/Noticias) -->
+        <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+            <i class="ph-duotone ph-newspaper"></i> Novedades
+        </h3>
+        
+        <div id="items-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Aquí aparecerán los items mágicamente -->
+            <div class="text-center text-gray-400 py-10 col-span-full">
+                Cargando datos...
             </div>
         </div>
 
     </main>
 
-    <!-- Footer -->
-    <footer class="text-center mt-10 py-6 text-gray-500 text-sm">
-        <p>&copy; 2024 Mi App Increíble</p>
-    </footer>
+    <!-- Configuración de Firebase y Lógica -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-    <!-- Notificación Flotante (Toast) -->
-    <div id="toast" class="fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg opacity-0 pointer-events-none transition-opacity duration-300 z-50">
-        Mensaje aquí
-    </div>
+        // Configuración automática (No tocar)
+        const firebaseConfig = JSON.parse(new URLSearchParams(window.location.search).get('firebase_config') || '{}');
+        // NOTA: En GitHub Pages real, necesitarás poner tu propia config aquí.
+        // Como estamos en un entorno de prueba, esto funcionará aquí, pero te explicaré
+        // cómo hacerlo en GitHub al final.
+        
+        // Usamos la configuración del entorno si está disponible
+        const app = initializeApp(typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'mi-app-demo';
 
-    <script>
-        // --- LÓGICA DE LA APLICACIÓN ---
+        // 1. Autenticación Anónima (Necesaria para leer la base de datos)
+        signInAnonymously(auth).then(() => {
+            console.log("Conectado como usuario anónimo");
+            iniciarEscucha();
+        }).catch((error) => console.error("Error auth:", error));
 
-        // Función para agregar una nueva idea a la lista
-        function agregarIdea() {
-            const input = document.getElementById('inputIdea');
-            const texto = input.value.trim();
-            const lista = document.getElementById('listaIdeas');
-            const mensajeVacio = document.getElementById('mensajeVacio');
-
-            if (texto === "") {
-                mostrarMensaje("¡Escribe algo primero!");
-                input.focus();
-                return;
-            }
-
-            // Crear el elemento HTML (li)
-            const nuevoItem = document.createElement('li');
-            nuevoItem.className = "flex justify-between items-center bg-white p-3 rounded-lg shadow-sm border border-gray-100 group animate-bounce-in";
-            nuevoItem.innerHTML = `
-                <span>${texto}</span>
-                <button onclick="eliminarElemento(this)" class="text-red-400 hover:text-red-600 transition-colors">
-                    <i class="ph-fill ph-trash"></i>
-                </button>
-            `;
-
-            // Agregar a la lista
-            lista.prepend(nuevoItem);
+        function iniciarEscucha() {
+            // Escuchar el Título y Mensaje Principal
+            const configRef = collection(db, 'artifacts', appId, 'public', 'data', 'configuracion');
             
-            // Limpiar input
-            input.value = "";
-            input.focus();
+            onSnapshot(configRef, (snapshot) => {
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.titulo) document.getElementById('titulo-web').innerText = data.titulo;
+                    if (data.mensaje) document.getElementById('mensaje-web').innerText = data.mensaje;
+                    // Quitar animación de carga
+                    document.getElementById('welcome-section').classList.remove('animate-pulse');
+                });
+            });
 
-            // Ocultar mensaje de vacío si hay elementos
-            verificarListaVacia();
-        }
-
-        // Función para eliminar un elemento
-        function eliminarElemento(boton) {
-            const item = boton.parentElement;
-            // Efecto visual antes de eliminar
-            item.style.opacity = '0';
-            item.style.transform = 'translateX(20px)';
-            item.style.transition = 'all 0.3s ease';
+            // Escuchar la lista de Items (Productos/Noticias)
+            const itemsRef = collection(db, 'artifacts', appId, 'public', 'data', 'items');
             
-            setTimeout(() => {
-                item.remove();
-                verificarListaVacia();
-            }, 300);
-        }
+            onSnapshot(itemsRef, (snapshot) => {
+                const container = document.getElementById('items-container');
+                container.innerHTML = ''; // Limpiar lista
 
-        // Verificar si la lista está vacía
-        function verificarListaVacia() {
-            const lista = document.getElementById('listaIdeas');
-            const mensajeVacio = document.getElementById('mensajeVacio');
-            if (lista.children.length === 0) {
-                mensajeVacio.classList.remove('hidden');
-            } else {
-                mensajeVacio.classList.add('hidden');
-            }
-        }
+                if (snapshot.empty) {
+                    container.innerHTML = '<div class="col-span-full text-center text-gray-500">No hay novedades publicadas aún.</div>';
+                    return;
+                }
 
-        // Permitir agregar con la tecla Enter
-        document.getElementById('inputIdea').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                agregarIdea();
-            }
-        });
-
-        // Función auxiliar para mostrar mensajes flotantes
-        function mostrarMensaje(texto) {
-            const toast = document.getElementById('toast');
-            toast.innerText = texto;
-            toast.classList.remove('opacity-0');
-            
-            setTimeout(() => {
-                toast.classList.add('opacity-0');
-            }, 3000);
+                snapshot.forEach(doc => {
+                    const item = doc.data();
+                    const card = document.createElement('div');
+                    card.className = "bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow";
+                    card.innerHTML = `
+                        <div class="flex justify-between items-start">
+                            <h4 class="font-bold text-lg text-gray-800">${item.titulo || 'Sin título'}</h4>
+                            <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">Nuevo</span>
+                        </div>
+                        <p class="text-gray-600 mt-2 text-sm">${item.descripcion || ''}</p>
+                        <div class="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
+                            <span class="font-bold text-indigo-600">${item.precio ? '$' + item.precio : 'Gratis'}</span>
+                            <button class="text-sm text-indigo-600 font-semibold hover:underline">Ver más</button>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            });
         }
     </script>
 </body>
