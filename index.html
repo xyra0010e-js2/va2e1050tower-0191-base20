@@ -29,11 +29,29 @@
         .spin-paused { animation-play-state: paused; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
         .sidebar-transition { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        
+        /* BLOQUEO TOTAL DEL VIDEO */
+        .video-locked {
+            pointer-events: none !important; /* El video no existe para el ratón/dedo */
+            user-select: none !important;
+            -webkit-user-select: none !important;
+            -webkit-touch-callout: none !important; /* iOS: no mostrar menú al mantener pulsado */
+        }
+        
+        /* CAPA ESCUDO */
+        .click-shield {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 20; /* Encima del video */
+            background: rgba(0,0,0,0.01); /* Casi transparente pero existe para atrapar clicks */
+            /* Habilitar clicks en esta capa evita que pasen al video */
+            pointer-events: auto; 
+        }
     </style>
 </head>
-<body class="bg-white dark:bg-darkbg text-gray-800 dark:text-white min-h-screen relative overflow-x-hidden">
+<body class="bg-white dark:bg-darkbg text-gray-800 dark:text-white min-h-screen relative overflow-x-hidden select-none" oncontextmenu="return false">
 
-    <!-- NAV GLOBAL -->
+    <!-- NAV -->
     <nav class="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-gray-200 dark:border-white/10 h-16 flex items-center justify-between px-4 transition-colors duration-300">
         <div class="flex items-center gap-4">
             <button onclick="toggleSidebar()" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors">
@@ -69,12 +87,9 @@
         </div>
     </aside>
 
-    <!-- =========================
-         VISTA 1: INICIO (Slots Protegidos)
-         ========================= -->
+    <!-- VIEW HOME -->
     <div id="view-home" class="animate-fade-in pt-16">
         <section class="relative w-full h-[85vh] bg-gradient-to-b from-[#1a1a2e] to-black overflow-hidden flex flex-col items-center justify-center text-center">
-            <!-- Hero Background -->
             <div class="absolute inset-0">
                 <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,#1e2952_0%,#000000_70%)] opacity-80"></div>
                 <div class="absolute top-[50%] left-1/2 transform -translate-x-1/2 -translate-y-[60%] w-[80%] max-w-[400px] md:max-w-[500px]">
@@ -91,23 +106,19 @@
             </div>
         </section>
 
-        <!-- CAROUSEL DE SLOTS -->
         <section class="bg-black py-12 px-4 border-t border-white/10 relative">
             <div class="max-w-7xl mx-auto">
                 <h2 class="text-2xl font-bold text-white mb-6 px-2">Explora con Galaxy</h2>
-                
                 <div class="relative group">
                     <div id="video-scroll-container" class="flex overflow-x-auto gap-4 pb-8 px-2 hide-scrollbar snap-x snap-mandatory scroll-smooth">
-                        <!-- Aquí se inyectan los 5 slots protegidos -->
+                        <!-- SLOTS INYECTADOS -->
                     </div>
                 </div>
             </div>
         </section>
     </div>
 
-    <!-- =========================
-         VISTA 2: GALERÍA
-         ========================= -->
+    <!-- VIEW GALLERY -->
     <div id="view-gallery" class="hidden pt-20 px-4 min-h-screen bg-gray-50 dark:bg-[#0a0a0a]">
         <header class="mb-10 text-center max-w-4xl mx-auto">
             <h2 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">Mi Contenido</h2>
@@ -115,7 +126,6 @@
         </header>
         <div id="items-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto pb-24"></div>
         
-        <!-- Widget Música -->
         <div id="music-widget" class="fixed bottom-6 right-6 z-50 flex flex-col items-end hidden">
             <div id="music-menu" class="bg-white/90 dark:bg-gray-800/95 backdrop-blur-md border border-gray-200 dark:border-gray-700 shadow-2xl rounded-2xl p-4 mb-4 w-72 transform scale-90 opacity-0 pointer-events-none transition-all duration-300 origin-bottom-right">
                 <div class="flex justify-between items-center mb-3 border-b border-gray-200 dark:border-gray-600 pb-2">
@@ -136,7 +146,6 @@
         </div>
     </div>
 
-    <!-- JS -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, onSnapshot, query, orderBy, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -153,7 +162,6 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // UI & NAVEGACIÓN
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark');
         window.toggleTheme = () => { document.documentElement.classList.toggle('dark'); localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light'; };
         const sidebar = document.getElementById('sidebar');
@@ -166,15 +174,11 @@
             toggleSidebar();
         };
 
-        // ===================================
-        // LOGICA SLOTS (INICIO) - PROTEGIDOS
-        // ===================================
+        // SLOTS RENDER
         const slotContainer = document.getElementById('video-scroll-container');
-        
         for (let i = 1; i <= 5; i++) {
             const slotId = `slot_${i}`;
             const slotDiv = document.createElement('div');
-            // Z-0 para el contenedor base
             slotDiv.className = "snap-center flex-shrink-0 relative w-[260px] h-[460px] rounded-3xl overflow-hidden bg-gray-900 border border-white/10 group";
             slotDiv.id = `render-${slotId}`;
             slotDiv.innerHTML = `<div class="w-full h-full flex items-center justify-center text-gray-700 font-bold text-3xl opacity-20">${i}</div>`;
@@ -185,36 +189,21 @@
                 if (docSnap.exists() && docSnap.data().url) {
                     const d = docSnap.data();
                     const isVideo = d.tipo === 'video';
+                    let contentHTML = isVideo 
+                        ? `<video id="vid-${slotId}" src="${d.url}" class="absolute inset-0 w-full h-full object-cover transform scale-105 video-locked" autoplay loop muted playsinline disablePictureInPicture></video>`
+                        : `<img src="${d.url}" class="absolute inset-0 w-full h-full object-cover">`;
                     
-                    let contentHTML = '';
-                    let audioBtnHTML = '';
-
-                    if (isVideo) {
-                        // Z-INDEX 0: VIDEO
-                        // autoplay loop muted playsinline: Reproducción automática silenciosa
-                        contentHTML = `<video id="vid-${slotId}" src="${d.url}" class="absolute inset-0 w-full h-full object-cover transform scale-105" autoplay loop muted playsinline></video>`;
-                        
-                        // Z-INDEX 30: BOTÓN AUDIO (Tocable)
-                        audioBtnHTML = `
-                            <button onclick="toggleSlotAudio('vid-${slotId}', this)" class="absolute top-4 right-4 z-30 w-10 h-10 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-md flex items-center justify-center text-white border border-white/10 transition-colors cursor-pointer active:scale-95 shadow-lg">
-                                <i class="ph-fill ph-speaker-slash text-lg"></i>
-                            </button>
-                        `;
-                    } else {
-                        contentHTML = `<img src="${d.url}" class="absolute inset-0 w-full h-full object-cover">`;
-                    }
+                    let audioBtn = isVideo 
+                        ? `<button onclick="toggleSlotAudio('vid-${slotId}', this)" class="absolute top-4 right-4 z-30 w-10 h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white border border-white/10 transition-colors cursor-pointer active:scale-95 shadow-lg"><i class="ph-fill ph-speaker-slash text-lg"></i></button>` 
+                        : '';
 
                     el.innerHTML = `
                         ${contentHTML}
-                        
-                        <!-- Z-INDEX 20: CAPA PROTECTORA (Transparent Overlay) -->
-                        <!-- Esta capa captura los clicks y evita que lleguen al video -->
-                        <div class="absolute inset-0 z-20 bg-transparent w-full h-full pointer-events-auto" oncontextmenu="return false;"></div>
-
-                        <!-- Z-INDEX 20: GRADIENTE VISUAL -->
+                        <!-- EL ESCUDO PROTECTOR (Atrapa todos los toques) -->
+                        <div class="click-shield"></div>
+                        <!-- SOMBRA GRADIENTE -->
                         <div class="absolute inset-0 z-20 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-90 pointer-events-none"></div>
-                        
-                        <!-- Z-INDEX 20: TEXTO -->
+                        <!-- TEXTO -->
                         <div class="absolute bottom-0 left-0 p-6 text-white z-20 w-full pointer-events-none">
                             <div class="flex items-center gap-2 mb-1">
                                 <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-blue-400 to-purple-500 flex items-center justify-center text-[8px] font-bold">G</div>
@@ -222,9 +211,7 @@
                             </div>
                             <h3 class="text-2xl font-bold leading-none tracking-tight">${d.titulo || 'Sin Título'}</h3>
                         </div>
-
-                        <!-- Z-INDEX 30: BOTONES TOCABLES -->
-                        ${audioBtnHTML}
+                        ${audioBtn}
                     `;
                 } else {
                     el.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-gray-900"><i class="ph-duotone ph-plus text-4xl text-gray-700"></i></div>`;
@@ -235,20 +222,10 @@
         window.toggleSlotAudio = (vidId, btn) => {
             const vid = document.getElementById(vidId);
             const icon = btn.querySelector('i');
-            if (vid.muted) {
-                vid.muted = false;
-                icon.className = "ph-fill ph-speaker-high text-lg text-blue-400";
-                btn.classList.add('bg-blue-600/20', 'border-blue-400/50');
-            } else {
-                vid.muted = true;
-                icon.className = "ph-fill ph-speaker-slash text-lg";
-                btn.classList.remove('bg-blue-600/20', 'border-blue-400/50');
-            }
+            if (vid.muted) { vid.muted = false; icon.className = "ph-fill ph-speaker-high text-lg text-blue-400"; btn.classList.add('bg-blue-600/20'); } 
+            else { vid.muted = true; icon.className = "ph-fill ph-speaker-slash text-lg"; btn.classList.remove('bg-blue-600/20'); }
         };
 
-        // ===================================
-        // 2. GALERÍA
-        // ===================================
         let playlist = [];
         const audioPlayer = document.getElementById('audio-player');
         const vinylRecord = document.getElementById('vinyl-record');
@@ -261,9 +238,7 @@
             const playCont = document.getElementById('playlist-container');
             const widget = document.getElementById('music-widget');
             cont.innerHTML = ''; playCont.innerHTML = ''; playlist = [];
-
             if(snap.empty) { cont.innerHTML = '<div class="col-span-full text-center text-gray-400 py-10">Vacío</div>'; return; }
-
             snap.forEach(doc => {
                 const item = doc.data();
                 if(item.tipo === 'audio') {
@@ -274,9 +249,7 @@
                     d.onclick = () => playSong(item.url);
                     playCont.appendChild(d);
                 } else {
-                    let media = item.tipo === 'video' 
-                        ? `<video controls class="w-full h-48 object-cover bg-black"><source src="${item.url}"></video>` 
-                        : `<img src="${item.url}" class="w-full h-48 object-cover">`;
+                    let media = item.tipo === 'video' ? `<video controls class="w-full h-48 object-cover bg-black"><source src="${item.url}"></video>` : `<img src="${item.url}" class="w-full h-48 object-cover">`;
                     const card = document.createElement('div');
                     card.className = "bg-white dark:bg-darkcard rounded-xl overflow-hidden shadow-sm border border-gray-100 dark:border-white/10";
                     card.innerHTML = `${media}<div class="p-4"><h3 class="font-bold dark:text-white">${item.titulo}</h3><p class="text-xs text-gray-500">${item.precio||''}</p></div>`;
@@ -290,7 +263,6 @@
         window.playSong = (u) => { audioPlayer.src = u; audioPlayer.play(); updateUI(true); };
         window.togglePlay = () => { if(audioPlayer.paused) { audioPlayer.play(); updateUI(true); } else { audioPlayer.pause(); updateUI(false); } };
         function updateUI(p) { if(p) { vinylRecord.classList.remove('spin-paused'); musicWave.classList.remove('hidden'); } else { vinylRecord.classList.add('spin-paused'); musicWave.classList.add('hidden'); } }
-
     </script>
 </body>
 </html>
