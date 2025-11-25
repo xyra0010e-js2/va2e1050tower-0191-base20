@@ -70,10 +70,11 @@
     </aside>
 
     <!-- =========================
-         VISTA 1: INICIO (Slots Dinámicos)
+         VISTA 1: INICIO (Slots Protegidos)
          ========================= -->
     <div id="view-home" class="animate-fade-in pt-16">
         <section class="relative w-full h-[85vh] bg-gradient-to-b from-[#1a1a2e] to-black overflow-hidden flex flex-col items-center justify-center text-center">
+            <!-- Hero Background -->
             <div class="absolute inset-0">
                 <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,#1e2952_0%,#000000_70%)] opacity-80"></div>
                 <div class="absolute top-[50%] left-1/2 transform -translate-x-1/2 -translate-y-[60%] w-[80%] max-w-[400px] md:max-w-[500px]">
@@ -90,15 +91,14 @@
             </div>
         </section>
 
-        <!-- CAROUSEL DE SLOTS (VIDEO 9:16) -->
+        <!-- CAROUSEL DE SLOTS -->
         <section class="bg-black py-12 px-4 border-t border-white/10 relative">
             <div class="max-w-7xl mx-auto">
                 <h2 class="text-2xl font-bold text-white mb-6 px-2">Explora con Galaxy</h2>
                 
                 <div class="relative group">
-                    <!-- CONTENEDOR DE SLOTS -->
                     <div id="video-scroll-container" class="flex overflow-x-auto gap-4 pb-8 px-2 hide-scrollbar snap-x snap-mandatory scroll-smooth">
-                        <!-- Aquí se inyectan los 5 slots -->
+                        <!-- Aquí se inyectan los 5 slots protegidos -->
                     </div>
                 </div>
             </div>
@@ -141,7 +141,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, onSnapshot, query, orderBy, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // 🟢 CONFIG
         const firebaseConfig = {
             apiKey: "AIzaSyDr490X-m0dw5wnQaTmyhjjzd1TRJgEMcs",
             authDomain: "mi-web-app-f0523.firebaseapp.com",
@@ -154,7 +153,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // --- NAVEGACIÓN ---
+        // UI & NAVEGACIÓN
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark');
         window.toggleTheme = () => { document.documentElement.classList.toggle('dark'); localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light'; };
         const sidebar = document.getElementById('sidebar');
@@ -168,36 +167,37 @@
         };
 
         // ===================================
-        // 1. CARGA DE SLOTS (INICIO)
+        // LOGICA SLOTS (INICIO) - PROTEGIDOS
         // ===================================
         const slotContainer = document.getElementById('video-scroll-container');
         
-        // Inicializamos los 5 espacios en blanco
         for (let i = 1; i <= 5; i++) {
             const slotId = `slot_${i}`;
             const slotDiv = document.createElement('div');
-            slotDiv.className = "snap-center flex-shrink-0 relative w-[260px] h-[460px] rounded-3xl overflow-hidden bg-gray-900 border border-white/10";
+            // Z-0 para el contenedor base
+            slotDiv.className = "snap-center flex-shrink-0 relative w-[260px] h-[460px] rounded-3xl overflow-hidden bg-gray-900 border border-white/10 group";
             slotDiv.id = `render-${slotId}`;
-            // Placeholder inicial
             slotDiv.innerHTML = `<div class="w-full h-full flex items-center justify-center text-gray-700 font-bold text-3xl opacity-20">${i}</div>`;
             slotContainer.appendChild(slotDiv);
 
-            // Escuchar cambios
             onSnapshot(doc(db, "home_slots", slotId), (docSnap) => {
                 const el = document.getElementById(`render-${slotId}`);
                 if (docSnap.exists() && docSnap.data().url) {
                     const d = docSnap.data();
                     const isVideo = d.tipo === 'video';
                     
-                    // HTML DEL CONTENIDO REAL
                     let contentHTML = '';
+                    let audioBtnHTML = '';
+
                     if (isVideo) {
-                        contentHTML = `
-                            <video id="vid-${slotId}" src="${d.url}" class="absolute inset-0 w-full h-full object-cover transform scale-105" autoplay loop muted playsinline></video>
-                            
-                            <!-- Botón Audio -->
-                            <button onclick="toggleSlotAudio('vid-${slotId}', this)" class="absolute top-4 right-4 z-30 w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white border border-white/20 hover:bg-black/60 transition-colors cursor-pointer pointer-events-auto">
-                                <i class="ph-fill ph-speaker-slash text-sm"></i>
+                        // Z-INDEX 0: VIDEO
+                        // autoplay loop muted playsinline: Reproducción automática silenciosa
+                        contentHTML = `<video id="vid-${slotId}" src="${d.url}" class="absolute inset-0 w-full h-full object-cover transform scale-105" autoplay loop muted playsinline></video>`;
+                        
+                        // Z-INDEX 30: BOTÓN AUDIO (Tocable)
+                        audioBtnHTML = `
+                            <button onclick="toggleSlotAudio('vid-${slotId}', this)" class="absolute top-4 right-4 z-30 w-10 h-10 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-md flex items-center justify-center text-white border border-white/10 transition-colors cursor-pointer active:scale-95 shadow-lg">
+                                <i class="ph-fill ph-speaker-slash text-lg"></i>
                             </button>
                         `;
                     } else {
@@ -206,10 +206,15 @@
 
                     el.innerHTML = `
                         ${contentHTML}
-                        <!-- Capa de Protección y Gradiente (No deja descargar) -->
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-90 pointer-events-none"></div>
                         
-                        <!-- Texto Editable -->
+                        <!-- Z-INDEX 20: CAPA PROTECTORA (Transparent Overlay) -->
+                        <!-- Esta capa captura los clicks y evita que lleguen al video -->
+                        <div class="absolute inset-0 z-20 bg-transparent w-full h-full" oncontextmenu="return false;"></div>
+
+                        <!-- Z-INDEX 20: GRADIENTE VISUAL -->
+                        <div class="absolute inset-0 z-20 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-90 pointer-events-none"></div>
+                        
+                        <!-- Z-INDEX 20: TEXTO -->
                         <div class="absolute bottom-0 left-0 p-6 text-white z-20 w-full pointer-events-none">
                             <div class="flex items-center gap-2 mb-1">
                                 <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-blue-400 to-purple-500 flex items-center justify-center text-[8px] font-bold">G</div>
@@ -217,36 +222,33 @@
                             </div>
                             <h3 class="text-2xl font-bold leading-none tracking-tight">${d.titulo || 'Sin Título'}</h3>
                         </div>
+
+                        <!-- Z-INDEX 30: BOTONES TOCABLES -->
+                        ${audioBtnHTML}
                     `;
                 } else {
-                    // Estado Vacío (Mantenemos el cuadro pero gris)
                     el.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-gray-900"><i class="ph-duotone ph-plus text-4xl text-gray-700"></i></div>`;
                 }
             });
         }
 
-        // Función Audio Toggle para Slots
         window.toggleSlotAudio = (vidId, btn) => {
             const vid = document.getElementById(vidId);
             const icon = btn.querySelector('i');
             if (vid.muted) {
                 vid.muted = false;
-                icon.className = "ph-fill ph-speaker-high text-sm text-blue-400";
+                icon.className = "ph-fill ph-speaker-high text-lg text-blue-400";
+                btn.classList.add('bg-blue-600/20', 'border-blue-400/50');
             } else {
                 vid.muted = true;
-                icon.className = "ph-fill ph-speaker-slash text-sm";
+                icon.className = "ph-fill ph-speaker-slash text-lg";
+                btn.classList.remove('bg-blue-600/20', 'border-blue-400/50');
             }
         };
 
         // ===================================
-        // 2. GALERÍA & MÚSICA (Igual que antes)
+        // 2. GALERÍA
         // ===================================
-        // (El código de la galería y reproductor se mantiene funcional e integrado igual que la versión anterior)
-        // Por brevedad, se asume la misma lógica de Playlist que ya funcionaba bien.
-        
-        // ... (Aquí iría la lógica de onSnapshot para 'productos' que ya tenías) ...
-        // Para que funcione completo, pego la lógica esencial de galería aquí:
-        
         let playlist = [];
         const audioPlayer = document.getElementById('audio-player');
         const vinylRecord = document.getElementById('vinyl-record');
@@ -268,15 +270,13 @@
                     playlist.push(item);
                     const d = document.createElement('div');
                     d.className = "p-2 hover:bg-gray-100 dark:hover:bg-white/10 rounded flex justify-between cursor-pointer border-b border-white/5";
-                    d.innerHTML = `<span class="text-sm font-bold truncate w-40">${item.titulo}</span> <i class="ph-fill ph-play-circle text-teal-500"></i>`;
+                    d.innerHTML = `<span class="text-sm font-bold truncate w-40 dark:text-white">${item.titulo}</span> <i class="ph-fill ph-play-circle text-teal-500"></i>`;
                     d.onclick = () => playSong(item.url);
                     playCont.appendChild(d);
                 } else {
-                    // Render Item Galería
                     let media = item.tipo === 'video' 
                         ? `<video controls class="w-full h-48 object-cover bg-black"><source src="${item.url}"></video>` 
                         : `<img src="${item.url}" class="w-full h-48 object-cover">`;
-                    
                     const card = document.createElement('div');
                     card.className = "bg-white dark:bg-darkcard rounded-xl overflow-hidden shadow-sm border border-gray-100 dark:border-white/10";
                     card.innerHTML = `${media}<div class="p-4"><h3 class="font-bold dark:text-white">${item.titulo}</h3><p class="text-xs text-gray-500">${item.precio||''}</p></div>`;
