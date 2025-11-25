@@ -17,7 +17,7 @@
             <a href="index.html" target="_blank" class="text-slate-400 hover:text-white text-sm underline">Ver mi Web -></a>
         </header>
 
-        <!-- Formulario de Publicación -->
+        <!-- Formulario -->
         <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-2xl mb-8">
             <h2 class="font-bold mb-4 text-teal-300 text-lg flex items-center gap-2">
                 <i class="ph-bold ph-plus-circle"></i> Nueva Publicación
@@ -25,55 +25,51 @@
             
             <div class="grid gap-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input type="text" id="titulo" placeholder="Título (Ej: Mi Canción, Video Nuevo)" 
-                        class="w-full bg-slate-700 rounded p-3 text-white border border-slate-600 focus:border-teal-500 outline-none transition-colors">
+                    <input type="text" id="titulo" placeholder="Título (Canción o Post)" 
+                        class="w-full bg-slate-700 rounded p-3 text-white border border-slate-600 focus:border-teal-500 outline-none">
                     
-                    <input type="text" id="precio" placeholder="Precio / Artista / Subtítulo" 
-                        class="w-full bg-slate-700 rounded p-3 text-white border border-slate-600 focus:border-teal-500 outline-none transition-colors">
+                    <input type="text" id="precio" placeholder="Artista / Precio / Info" 
+                        class="w-full bg-slate-700 rounded p-3 text-white border border-slate-600 focus:border-teal-500 outline-none">
                 </div>
 
                 <textarea id="desc" placeholder="Descripción..." rows="3" 
-                    class="w-full bg-slate-700 rounded p-3 text-white border border-slate-600 focus:border-teal-500 outline-none transition-colors"></textarea>
+                    class="w-full bg-slate-700 rounded p-3 text-white border border-slate-600 focus:border-teal-500 outline-none"></textarea>
 
-                <!-- Zona de Subida Cloudinary -->
-                <div class="bg-slate-900/50 p-4 rounded-lg border-2 border-dashed border-slate-600 hover:border-teal-500/50 transition-colors relative group">
+                <!-- Zona de Subida -->
+                <div class="bg-slate-900/50 p-4 rounded-lg border-2 border-dashed border-slate-600 hover:border-teal-500/50 transition-colors relative">
                     <label class="text-sm text-slate-400 block mb-2 font-semibold">
-                        <i class="ph-bold ph-upload-simple"></i> Archivo Multimedia
+                        <i class="ph-bold ph-upload-simple"></i> Archivo
                     </label>
-                    <!-- Actualizado para aceptar audio -->
                     <input type="file" id="archivo" accept="image/*,video/*,audio/*" class="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-teal-600 file:text-white hover:file:bg-teal-700 cursor-pointer">
-                    <p class="text-xs text-slate-500 mt-2">Soporta: Fotos (JPG, PNG), Video (MP4) y Audio (MP3, WAV)</p>
+                    <p class="text-xs text-yellow-500 mt-2">
+                        <i class="ph-fill ph-info"></i> Nota: Si subes <b>Audio (MP3)</b>, irá al reproductor flotante. Si subes <b>Foto/Video</b>, irá al muro principal.
+                    </p>
                     
-                    <!-- Mensaje de carga -->
+                    <!-- Loading -->
                     <div id="loading-msg" class="hidden absolute inset-0 bg-slate-900/90 flex flex-col items-center justify-center rounded-lg z-10">
                         <i class="ph-bold ph-spinner animate-spin text-3xl text-teal-400 mb-2"></i>
                         <span class="text-teal-400 font-bold text-sm">Subiendo a la nube...</span>
-                        <span class="text-xs text-slate-400">Por favor espera</span>
                     </div>
                 </div>
 
-                <button onclick="guardarTodo()" class="bg-teal-600 hover:bg-teal-500 text-white font-bold py-3 rounded-lg shadow-lg hover:shadow-teal-500/20 transition-all flex justify-center items-center gap-2 mt-2">
-                    <i class="ph-bold ph-paper-plane-right"></i> Publicar Ahora
+                <button onclick="guardarTodo()" class="bg-teal-600 hover:bg-teal-500 text-white font-bold py-3 rounded-lg shadow-lg flex justify-center items-center gap-2 mt-2">
+                    <i class="ph-bold ph-paper-plane-right"></i> Publicar
                 </button>
             </div>
         </div>
 
-        <!-- Lista de Publicaciones -->
-        <h3 class="text-slate-400 text-sm uppercase font-bold mb-4 tracking-wider">Historial</h3>
+        <!-- Lista -->
+        <h3 class="text-slate-400 text-sm uppercase font-bold mb-4 tracking-wider">Contenido Activo</h3>
         <div id="lista-items" class="space-y-3 pb-10">
             <p class="text-center text-slate-600 py-4">Cargando lista...</p>
         </div>
     </div>
 
-    <!-- LÓGICA JAVASCRIPT -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // ==========================================
-        // 🟢 TUS CLAVES CONFIGURADAS 🟢
-        // ==========================================
-        
+        // 🟢 CONFIGURACIÓN
         const firebaseConfig = {
             apiKey: "AIzaSyDr490X-m0dw5wnQaTmyhjjzd1TRJgEMcs",
             authDomain: "mi-web-app-f0523.firebaseapp.com",
@@ -83,23 +79,19 @@
             appId: "1:509336040232:web:b41a777c6dd63ba350d61d",
             measurementId: "G-1BFT6DZEV5"
         };
-
         const CLOUD_NAME = "dq1ohhul6"; 
         const UPLOAD_PRESET = "rzuldi4r";
-
-        // ==========================================
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // --- 1. FUNCIÓN SUBIR A CLOUDINARY ---
+        // SUBIDA CLOUDINARY
         async function subirACloudinary(file) {
             const formData = new FormData();
             formData.append('file', file);
             formData.append('upload_preset', UPLOAD_PRESET);
-            formData.append('folder', 'mi_app_web'); 
-
-            // Detectar tipo manualmente para forzarlo si es audio (Cloudinary a veces confunde audio con video)
+            
+            // Detectar tipo manualmente
             let tipoManual = 'image';
             if (file.type.startsWith('video')) tipoManual = 'video';
             if (file.type.startsWith('audio')) tipoManual = 'audio';
@@ -108,19 +100,17 @@
 
             try {
                 const response = await fetch(url, { method: 'POST', body: formData });
-                if (!response.ok) throw new Error('Error en la subida');
+                if (!response.ok) throw new Error('Error Cloudinary');
                 const data = await response.json();
-                
-                // Usamos nuestro tipo manual para mayor precisión
                 return { url: data.secure_url, tipo: tipoManual }; 
             } catch (error) {
-                console.error("Error Cloudinary:", error);
-                alert("Hubo un error subiendo el archivo. Revisa tu conexión.");
+                console.error(error);
+                alert("Error al subir archivo.");
                 return null;
             }
         }
 
-        // --- 2. FUNCIÓN GUARDAR TODO ---
+        // GUARDAR
         window.guardarTodo = async () => {
             const titulo = document.getElementById('titulo').value;
             const precio = document.getElementById('precio').value;
@@ -128,7 +118,7 @@
             const archivoInput = document.getElementById('archivo');
             const loadingMsg = document.getElementById('loading-msg');
 
-            if(!titulo) return alert("El título es obligatorio.");
+            if(!titulo) return alert("Falta el título");
 
             loadingMsg.classList.remove('hidden');
 
@@ -145,79 +135,58 @@
                 }
 
                 await addDoc(collection(db, "productos"), {
-                    titulo: titulo,
-                    precio: precio,
-                    desc: desc,
+                    titulo, precio, desc,
                     url: mediaData.url,
                     tipo: mediaData.tipo, 
                     createdAt: new Date()
                 });
 
-                alert("¡Publicado con éxito!");
-                // Limpiar campos
+                alert("¡Publicado!");
                 document.getElementById('titulo').value = "";
                 document.getElementById('precio').value = "";
                 document.getElementById('desc').value = "";
                 document.getElementById('archivo').value = "";
                 
             } catch (e) {
-                console.error(e);
                 alert("Error: " + e.message);
             } finally {
                 loadingMsg.classList.add('hidden');
             }
         };
 
-        // --- 3. VER LISTA Y BORRAR ---
+        // LISTAR
         const q = query(collection(db, "productos"), orderBy("createdAt", "desc"));
-        
         onSnapshot(q, (snapshot) => {
             const lista = document.getElementById('lista-items');
             lista.innerHTML = '';
             
-            if (snapshot.empty) {
-                lista.innerHTML = '<p class="text-center text-slate-600 py-4">No hay nada publicado aún.</p>';
-            }
-
             snapshot.forEach(doc => {
                 const item = doc.data();
                 const div = document.createElement('div');
-                div.className = "bg-slate-800 p-4 rounded-lg border border-slate-700 flex justify-between items-center group hover:border-slate-500 transition-colors";
+                div.className = "bg-slate-800 p-4 rounded-lg border border-slate-700 flex justify-between items-center";
                 
-                // Icono Inteligente
                 let icono = '<i class="ph-fill ph-text-t text-slate-500 text-xl"></i>';
                 if(item.tipo === 'image') icono = '<i class="ph-fill ph-image text-purple-400 text-xl"></i>';
                 if(item.tipo === 'video') icono = '<i class="ph-fill ph-film-strip text-red-400 text-xl"></i>';
-                if(item.tipo === 'audio') icono = '<i class="ph-fill ph-disc text-yellow-400 text-xl animate-spin-slow"></i>';
+                if(item.tipo === 'audio') icono = '<i class="ph-fill ph-music-notes text-yellow-400 text-xl"></i>';
 
                 div.innerHTML = `
                     <div class="flex items-center gap-3 overflow-hidden">
-                        <div class="w-10 h-10 bg-slate-900 rounded flex items-center justify-center flex-shrink-0">
-                            ${icono}
-                        </div>
+                        <div class="w-10 h-10 bg-slate-900 rounded flex items-center justify-center flex-shrink-0">${icono}</div>
                         <div class="min-w-0">
                             <h4 class="font-bold text-white truncate">${item.titulo}</h4>
-                            <p class="text-xs text-slate-400 truncate">${item.tipo ? item.tipo.toUpperCase() : 'TEXTO'} - ${item.createdAt ? 'Publicado' : ''}</p>
+                            <p class="text-xs text-slate-400 truncate">${item.tipo || 'TEXTO'}</p>
                         </div>
                     </div>
-                    <button onclick="borrar('${doc.id}')" 
-                        class="p-2 text-red-400 hover:text-white hover:bg-red-600 rounded transition-colors" title="Borrar">
-                        <i class="ph-bold ph-trash"></i>
-                    </button>
+                    <button onclick="borrar('${doc.id}')" class="p-2 text-red-400 hover:text-white"><i class="ph-bold ph-trash"></i></button>
                 `;
                 lista.appendChild(div);
             });
         });
 
         window.borrar = async (id) => {
-            if(confirm("¿Eliminar publicación?")) {
-                await deleteDoc(doc(db, "productos", id));
-            }
+            if(confirm("¿Eliminar?")) await deleteDoc(doc(db, "productos", id));
         }
     </script>
-    <style>
-        .animate-spin-slow { animation: spin 3s linear infinite; }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-    </style>
 </body>
 </html>
