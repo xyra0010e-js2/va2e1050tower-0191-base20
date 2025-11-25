@@ -3,81 +3,134 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Web Increíble</title>
+    <title>Mi Web Oficial</title>
+    <!-- Estilos y Iconos -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
 </head>
-<body class="bg-gray-50 text-gray-800 font-sans min-h-screen">
+<body class="bg-gray-100 text-gray-800 font-sans min-h-screen">
 
-    <nav class="bg-white shadow p-4 sticky top-0 z-50">
-        <div class="max-w-5xl mx-auto">
-            <h1 class="text-xl font-bold text-teal-600 flex items-center gap-2">
-                <i class="ph-fill ph-storefront"></i> Mi Web
+    <!-- Navegación -->
+    <nav class="bg-white shadow-md p-4 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-extrabold text-teal-600 flex items-center gap-2 tracking-tight">
+                <i class="ph-fill ph-planet"></i> Mi Universo
             </h1>
+            <a href="#" class="text-sm font-semibold text-gray-500 hover:text-teal-600 transition-colors">Contacto</a>
         </div>
     </nav>
 
-    <main class="max-w-5xl mx-auto mt-8 p-4">
+    <!-- Contenido Principal -->
+    <main class="max-w-6xl mx-auto mt-8 p-4">
+        
+        <!-- Cabecera simple -->
+        <header class="mb-10 text-center">
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-2">Últimas Novedades</h2>
+            <div class="h-1 w-20 bg-teal-500 mx-auto rounded"></div>
+        </header>
+
+        <!-- Grid de Tarjetas -->
         <div id="items-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <!-- Cargando... -->
+            <!-- Cargando datos... -->
+            <div class="col-span-full flex justify-center py-20">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
+            </div>
         </div>
+
     </main>
 
+    <!-- LÓGICA -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // 🔴 PEGA TU CONFIG DE FIREBASE AQUÍ (SOLO FIREBASE) 🔴
+        // ==========================================
+        // 🟢 TUS CLAVES CONFIGURADAS 🟢
+        // ==========================================
+
         const firebaseConfig = {
-
-  apiKey: "AIzaSyDr490X-m0dw5wnQaTmyhjjzd1TRJgEMcs",
-
-  authDomain: "mi-web-app-f0523.firebaseapp.com",
-
-  projectId: "mi-web-app-f0523",
-
-  storageBucket: "mi-web-app-f0523.firebasestorage.app",
-
-  messagingSenderId: "509336040232",
-
-  appId: "1:509336040232:web:b41a777c6dd63ba350d61d",
-
-  measurementId: "G-1BFT6DZEV5"
-
-};
-const CLOUD_NAME = "dq1ohhul6"; 
-        const UPLOAD_PRESET = "rzuldi4r";
+            apiKey: "AIzaSyDr490X-m0dw5wnQaTmyhjjzd1TRJgEMcs",
+            authDomain: "mi-web-app-f0523.firebaseapp.com",
+            projectId: "mi-web-app-f0523",
+            storageBucket: "mi-web-app-f0523.firebasestorage.app",
+            messagingSenderId: "509336040232",
+            appId: "1:509336040232:web:b41a777c6dd63ba350d61d",
+            measurementId: "G-1BFT6DZEV5"
+        };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        onSnapshot(collection(db, "productos"), (snapshot) => {
+        // Consultar productos ordenados por fecha (más nuevo primero)
+        const q = query(collection(db, "productos"), orderBy("createdAt", "desc"));
+
+        onSnapshot(q, (snapshot) => {
             const container = document.getElementById('items-container');
             container.innerHTML = ''; 
+
+            if(snapshot.empty) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-20 bg-white rounded-xl shadow-sm">
+                        <i class="ph-duotone ph-ghost text-6xl text-gray-300 mb-4"></i>
+                        <p class="text-gray-500">No hay contenido publicado aún.</p>
+                    </div>`;
+                return;
+            }
 
             snapshot.forEach((doc) => {
                 const item = doc.data();
                 
-                // Determinar qué HTML mostrar según el archivo
-                let media = '';
+                // DECIDIR QUÉ MOSTRAR (FOTO, VIDEO O ICONO)
+                let mediaHTML = '';
+                
                 if (item.url) {
                     if (item.tipo === 'video') {
-                        media = `<video controls class="w-full h-56 object-cover bg-black"><source src="${item.url}"></video>`;
+                        // Es un video
+                        mediaHTML = `
+                            <div class="relative w-full pt-[56.25%] bg-black">
+                                <video controls class="absolute top-0 left-0 w-full h-full object-contain">
+                                    <source src="${item.url}" type="video/mp4">
+                                    <source src="${item.url}" type="video/webm">
+                                    Tu navegador no soporta video.
+                                </video>
+                            </div>`;
                     } else {
-                        // Por defecto asumimos imagen
-                        media = `<img src="${item.url}" class="w-full h-56 object-cover" alt="${item.titulo}">`;
+                        // Es una imagen (o default)
+                        mediaHTML = `
+                            <div class="w-full h-64 overflow-hidden relative group">
+                                <img src="${item.url}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" alt="${item.titulo}">
+                                <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>
+                            </div>`;
                     }
                 } else {
-                    media = `<div class="w-full h-56 bg-gray-200 flex items-center justify-center text-gray-400"><i class="ph ph-image text-4xl"></i></div>`;
+                    // Solo texto (sin archivo)
+                    mediaHTML = `
+                        <div class="w-full h-32 bg-gradient-to-br from-teal-50 to-indigo-50 flex items-center justify-center">
+                            <i class="ph-duotone ph-newspaper text-4xl text-teal-200"></i>
+                        </div>`;
                 }
 
+                // Generar Tarjeta
                 const card = `
-                    <div class="bg-white rounded-xl shadow overflow-hidden hover:shadow-lg transition">
-                        ${media}
-                        <div class="p-4">
-                            <h3 class="font-bold text-lg">${item.titulo}</h3>
-                            <p class="text-sm text-gray-500 mt-1">${item.desc || ''}</p>
-                            <div class="mt-4 font-bold text-teal-600">${item.precio || ''}</div>
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-shadow duration-300 animate-fade-in flex flex-col">
+                        ${mediaHTML}
+                        
+                        <div class="p-5 flex flex-col flex-grow">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="font-bold text-xl text-gray-900 leading-tight">${item.titulo}</h3>
+                                ${item.precio ? `<span class="bg-teal-50 text-teal-700 text-xs font-bold px-2 py-1 rounded-full border border-teal-100">${item.precio}</span>` : ''}
+                            </div>
+                            
+                            <p class="text-gray-600 text-sm leading-relaxed mb-4 flex-grow whitespace-pre-line">${item.desc || ''}</p>
+                            
+                            <div class="pt-4 border-t border-gray-100 flex justify-between items-center text-xs text-gray-400">
+                                <span>${item.tipo === 'video' ? '<i class="ph-fill ph-video-camera"></i> Video' : '<i class="ph-fill ph-image"></i> Imagen'}</span>
+                                <button class="text-teal-600 font-semibold hover:underline">Ver detalles</button>
+                            </div>
                         </div>
                     </div>
                 `;
