@@ -3,39 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Admin Nube</title>
+    <title>Admin - Cloudinary + Firebase</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
 </head>
-<body class="bg-slate-900 text-white min-h-screen font-sans p-6">
+<body class="bg-gray-900 text-white min-h-screen font-sans p-4 md:p-8">
 
-    <div class="max-w-2xl mx-auto">
-        <h1 class="text-2xl font-bold text-emerald-400 mb-6">Panel de Control (Nube)</h1>
+    <div class="max-w-3xl mx-auto">
+        <header class="flex justify-between items-center mb-8 border-b border-gray-700 pb-4">
+            <h1 class="text-2xl font-bold text-teal-400 flex items-center gap-2">
+                <i class="ph-fill ph-cloud-check"></i> Admin Híbrido
+            </h1>
+            <a href="index.html" target="_blank" class="text-gray-400 hover:text-white text-sm underline">Ver Web -></a>
+        </header>
 
-        <!-- Configuración -->
-        <div class="bg-slate-800 p-6 rounded-xl mb-6 border border-slate-700">
-            <h2 class="font-bold mb-4">Editar Portada</h2>
-            <input type="text" id="titulo" placeholder="Título Principal" class="w-full mb-3 p-2 bg-slate-700 rounded text-white">
-            <input type="text" id="mensaje" placeholder="Mensaje de bienvenida" class="w-full mb-3 p-2 bg-slate-700 rounded text-white">
-            <button onclick="guardarConfig()" class="bg-emerald-600 px-4 py-2 rounded font-bold hover:bg-emerald-500 w-full">Actualizar Web</button>
+        <!-- Formulario -->
+        <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-xl mb-8">
+            <h2 class="font-bold mb-4 text-teal-300 text-lg">Nueva Publicación</h2>
+            
+            <div class="grid gap-4">
+                <input type="text" id="titulo" placeholder="Título" class="w-full bg-gray-700 rounded p-2 text-white border border-gray-600 outline-none">
+                <input type="text" id="precio" placeholder="Precio / Info" class="w-full bg-gray-700 rounded p-2 text-white border border-gray-600 outline-none">
+                <textarea id="desc" placeholder="Descripción" rows="2" class="w-full bg-gray-700 rounded p-2 text-white border border-gray-600 outline-none"></textarea>
+
+                <!-- Subida Cloudinary -->
+                <div class="bg-gray-900/50 p-4 rounded border border-dashed border-gray-600">
+                    <label class="text-xs text-gray-400 block mb-2">Foto o Video (Subida vía Cloudinary)</label>
+                    <input type="file" id="archivo" class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-teal-600 file:text-white hover:file:bg-teal-700 cursor-pointer">
+                    <p id="status-upload" class="text-xs text-right mt-2 text-yellow-400 hidden">Subiendo archivo... espera...</p>
+                </div>
+
+                <button onclick="guardarTodo()" class="bg-teal-600 hover:bg-teal-500 text-white font-bold py-3 rounded transition-colors flex justify-center items-center gap-2">
+                    <i class="ph-bold ph-paper-plane-right"></i> Publicar
+                </button>
+            </div>
         </div>
 
-        <!-- Agregar Producto -->
-        <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
-            <h2 class="font-bold mb-4">Agregar Item</h2>
-            <input type="text" id="prod-titulo" placeholder="Nombre" class="w-full mb-3 p-2 bg-slate-700 rounded text-white">
-            <input type="text" id="prod-desc" placeholder="Descripción" class="w-full mb-3 p-2 bg-slate-700 rounded text-white">
-            <input type="text" id="prod-precio" placeholder="Precio" class="w-full mb-3 p-2 bg-slate-700 rounded text-white">
-            <button onclick="guardarProducto()" class="bg-blue-600 px-4 py-2 rounded font-bold hover:bg-blue-500 w-full">Publicar Item</button>
-        </div>
+        <!-- Lista -->
+        <h3 class="text-gray-400 text-sm uppercase font-bold mb-4">Publicaciones Activas</h3>
+        <div id="lista-items" class="space-y-3 pb-10"></div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, setDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // -------------------------------------------------------------
-        // 🔴 1. BORRA ESTO Y PEGA TU 'const firebaseConfig' AQUÍ ABAJO 🔴
+        // ==========================================
+        // 🔴 CONFIGURACIÓN (LLENA ESTO) 🔴
+        // ==========================================
         
+        // 1. TU FIREBASE (El que sirve para texto)
         const firebaseConfig = {
 
   apiKey: "AIzaSyDr490X-m0dw5wnQaTmyhjjzd1TRJgEMcs",
@@ -53,48 +70,101 @@
   measurementId: "G-1BFT6DZEV5"
 
 };
+const CLOUD_NAME = "dq1ohhul6"; 
+        const UPLOAD_PRESET = "rzuldi4r";
 
+        // 2. TU CLOUDINARY (Para archivos)
+        const CLOUD_NAME = "pon_tu_cloud_name_aqui"; // Ejemplo: "ds87fhs"
+        const UPLOAD_PRESET = "pon_tu_preset_aqui";  // Ejemplo: "ml_default" o el que creaste "unsigned"
 
-        // -------------------------------------------------------------
+        // ==========================================
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Hacer las funciones globales para que funcionen con los botones HTML
-        window.guardarConfig = async () => {
-            const t = document.getElementById('titulo').value;
-            const m = document.getElementById('mensaje').value;
-            
+        // --- SUBIR A CLOUDINARY ---
+        async function subirArchivoCloudinary(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('upload_preset', UPLOAD_PRESET);
+
+            // URL mágica de Cloudinary
+            const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`;
+
             try {
-                // Escribir en la base de datos de la nube
-                await setDoc(doc(db, "web", "configuracion"), {
-                    titulo: t,
-                    mensaje: m
-                });
-                alert("¡Actualizado en la nube!");
-            } catch (e) {
-                console.error(e);
-                alert("Error: " + e.message);
+                const response = await fetch(url, { method: 'POST', body: formData });
+                const data = await response.json();
+                return { url: data.secure_url, tipo: data.resource_type }; // 'image' o 'video'
+            } catch (error) {
+                console.error("Error Cloudinary:", error);
+                alert("Error subiendo archivo. Revisa tu Cloud Name y Preset.");
+                return null;
             }
-        };
+        }
 
-        window.guardarProducto = async () => {
-            const t = document.getElementById('prod-titulo').value;
-            const d = document.getElementById('prod-desc').value;
-            const p = document.getElementById('prod-precio').value;
+        // --- GUARDAR EN FIREBASE ---
+        window.guardarTodo = async () => {
+            const titulo = document.getElementById('titulo').value;
+            const precio = document.getElementById('precio').value;
+            const desc = document.getElementById('desc').value;
+            const archivoInput = document.getElementById('archivo');
+
+            if(!titulo) return alert("Falta el título");
+
+            // Mostrar estado
+            const status = document.getElementById('status-upload');
+            status.classList.remove('hidden');
+            status.innerText = "Subiendo archivo a la nube...";
 
             try {
+                let mediaData = { url: "", tipo: "" };
+
+                // 1. Si hay archivo, subirlo a Cloudinary primero
+                if (archivoInput.files.length > 0) {
+                    const resultado = await subirArchivoCloudinary(archivoInput.files[0]);
+                    if (!resultado) return; // Si falló, parar
+                    mediaData = resultado;
+                }
+
+                // 2. Guardar los datos de texto + el link del archivo en Firebase
                 await addDoc(collection(db, "productos"), {
-                    titulo: t, desc: d, precio: p
+                    titulo: titulo,
+                    precio: precio,
+                    desc: desc,
+                    url: mediaData.url,
+                    tipo: mediaData.tipo, // 'image', 'video' o ''
+                    createdAt: new Date()
                 });
-                alert("¡Producto publicado!");
-                // Limpiar inputs
-                document.getElementById('prod-titulo').value = "";
+
+                alert("¡Publicado con éxito!");
+                document.getElementById('titulo').value = "";
+                document.getElementById('desc').value = "";
+                document.getElementById('archivo').value = "";
+                status.classList.add('hidden');
+
             } catch (e) {
                 console.error(e);
-                alert("Error: " + e.message);
+                alert("Error guardando datos: " + e.message);
+                status.classList.add('hidden');
             }
         };
+
+        // --- LEER LISTA (Igual que antes) ---
+        onSnapshot(collection(db, "productos"), (snapshot) => {
+            const lista = document.getElementById('lista-items');
+            lista.innerHTML = '';
+            snapshot.forEach(doc => {
+                const item = doc.data();
+                const div = document.createElement('div');
+                div.className = "bg-gray-800 p-3 rounded border border-gray-700 flex justify-between";
+                div.innerHTML = `<span>${item.titulo}</span> <button onclick="borrar('${doc.id}')" class="text-red-400">Borrar</button>`;
+                lista.appendChild(div);
+            });
+        });
+
+        window.borrar = async (id) => {
+            if(confirm("¿Borrar?")) await deleteDoc(doc(db, "productos", id));
+        }
     </script>
 </body>
 </html>
