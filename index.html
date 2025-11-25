@@ -20,7 +20,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .animate-fade-in { animation: fadeIn 0.5s ease-out; }
@@ -30,22 +30,23 @@
         @keyframes spin { 100% { transform: rotate(360deg); } }
         .sidebar-transition { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         
-        /* BLOQUEO TOTAL DEL VIDEO */
+        /* SEGURIDAD EXTREMA VIDEO */
         .video-locked {
-            pointer-events: none !important; /* El video no existe para el ratón/dedo */
+            pointer-events: none !important; /* Invisible al tacto */
             user-select: none !important;
             -webkit-user-select: none !important;
-            -webkit-touch-callout: none !important; /* iOS: no mostrar menú al mantener pulsado */
+            -webkit-touch-callout: none !important; /* Deshabilita menú iOS */
         }
         
         /* CAPA ESCUDO */
         .click-shield {
             position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 20; /* Encima del video */
-            background: rgba(0,0,0,0.01); /* Casi transparente pero existe para atrapar clicks */
-            /* Habilitar clicks en esta capa evita que pasen al video */
-            pointer-events: auto; 
+            inset: 0;
+            z-index: 20; 
+            background: rgba(255,255,255,0); /* Transparente */
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            user-select: none;
         }
     </style>
 </head>
@@ -87,7 +88,7 @@
         </div>
     </aside>
 
-    <!-- VIEW HOME -->
+    <!-- VISTA 1: INICIO (Slots Protegidos) -->
     <div id="view-home" class="animate-fade-in pt-16">
         <section class="relative w-full h-[85vh] bg-gradient-to-b from-[#1a1a2e] to-black overflow-hidden flex flex-col items-center justify-center text-center">
             <div class="absolute inset-0">
@@ -111,14 +112,14 @@
                 <h2 class="text-2xl font-bold text-white mb-6 px-2">Explora con Galaxy</h2>
                 <div class="relative group">
                     <div id="video-scroll-container" class="flex overflow-x-auto gap-4 pb-8 px-2 hide-scrollbar snap-x snap-mandatory scroll-smooth">
-                        <!-- SLOTS INYECTADOS -->
+                        <!-- SLOTS -->
                     </div>
                 </div>
             </div>
         </section>
     </div>
 
-    <!-- VIEW GALLERY -->
+    <!-- VISTA 2: GALERÍA -->
     <div id="view-gallery" class="hidden pt-20 px-4 min-h-screen bg-gray-50 dark:bg-[#0a0a0a]">
         <header class="mb-10 text-center max-w-4xl mx-auto">
             <h2 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">Mi Contenido</h2>
@@ -126,6 +127,7 @@
         </header>
         <div id="items-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto pb-24"></div>
         
+        <!-- Widget Música -->
         <div id="music-widget" class="fixed bottom-6 right-6 z-50 flex flex-col items-end hidden">
             <div id="music-menu" class="bg-white/90 dark:bg-gray-800/95 backdrop-blur-md border border-gray-200 dark:border-gray-700 shadow-2xl rounded-2xl p-4 mb-4 w-72 transform scale-90 opacity-0 pointer-events-none transition-all duration-300 origin-bottom-right">
                 <div class="flex justify-between items-center mb-3 border-b border-gray-200 dark:border-gray-600 pb-2">
@@ -146,6 +148,7 @@
         </div>
     </div>
 
+    <!-- JS -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, onSnapshot, query, orderBy, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -174,7 +177,7 @@
             toggleSidebar();
         };
 
-        // SLOTS RENDER
+        // SLOTS CON PROTECCIÓN JS EXTRA
         const slotContainer = document.getElementById('video-scroll-container');
         for (let i = 1; i <= 5; i++) {
             const slotId = `slot_${i}`;
@@ -189,6 +192,7 @@
                 if (docSnap.exists() && docSnap.data().url) {
                     const d = docSnap.data();
                     const isVideo = d.tipo === 'video';
+                    
                     let contentHTML = isVideo 
                         ? `<video id="vid-${slotId}" src="${d.url}" class="absolute inset-0 w-full h-full object-cover transform scale-105 video-locked" autoplay loop muted playsinline disablePictureInPicture></video>`
                         : `<img src="${d.url}" class="absolute inset-0 w-full h-full object-cover">`;
@@ -199,11 +203,9 @@
 
                     el.innerHTML = `
                         ${contentHTML}
-                        <!-- EL ESCUDO PROTECTOR (Atrapa todos los toques) -->
+                        <!-- CAPA ESCUDO (CLICK SHIELD) -->
                         <div class="click-shield"></div>
-                        <!-- SOMBRA GRADIENTE -->
                         <div class="absolute inset-0 z-20 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-90 pointer-events-none"></div>
-                        <!-- TEXTO -->
                         <div class="absolute bottom-0 left-0 p-6 text-white z-20 w-full pointer-events-none">
                             <div class="flex items-center gap-2 mb-1">
                                 <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-blue-400 to-purple-500 flex items-center justify-center text-[8px] font-bold">G</div>
@@ -213,9 +215,23 @@
                         </div>
                         ${audioBtn}
                     `;
+                    // Volver a adjuntar listeners a las nuevas capas escudo
+                    attachShieldListeners();
                 } else {
                     el.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-gray-900"><i class="ph-duotone ph-plus text-4xl text-gray-700"></i></div>`;
                 }
+            });
+        }
+
+        // SCRIPT NUCLEAR PARA MATAR EVENTOS DE MENÚ
+        function attachShieldListeners() {
+            document.querySelectorAll('.click-shield').forEach(shield => {
+                shield.addEventListener('contextmenu', (e) => e.preventDefault());
+                shield.addEventListener('dragstart', (e) => e.preventDefault());
+                shield.addEventListener('touchstart', (e) => {
+                    // Permitir el click rápido pero matar el hold
+                    // No prevenimos default aquí para permitir scroll
+                }, {passive: false});
             });
         }
 
