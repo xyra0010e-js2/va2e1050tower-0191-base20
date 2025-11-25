@@ -4,62 +4,99 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mi Web Oficial</title>
-    <!-- Estilos y Iconos -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
         .animate-fade-in { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        /* Animación del disco */
-        .spin-record { animation: spin 4s linear infinite; }
-        .spin-record-paused { animation-play-state: paused; }
+        /* Animación del disco flotante */
+        .spin-slow { animation: spin 4s linear infinite; }
+        .spin-paused { animation-play-state: paused; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
-        
-        /* Estilos personalizados para el reproductor de audio */
-        audio::-webkit-media-controls-panel { background-color: #f3f4f6; }
+
+        /* Estilo del scrollbar del playlist */
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800 font-sans min-h-screen">
+<body class="bg-gray-100 text-gray-800 font-sans min-h-screen relative pb-20">
 
     <!-- Navegación -->
     <nav class="bg-white shadow-md p-4 sticky top-0 z-50">
         <div class="max-w-6xl mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-extrabold text-teal-600 flex items-center gap-2 tracking-tight">
+            <h1 class="text-xl font-extrabold text-teal-600 flex items-center gap-2">
                 <i class="ph-fill ph-planet"></i> Mi Universo
             </h1>
-            <a href="#" class="text-sm font-semibold text-gray-500 hover:text-teal-600 transition-colors">Contacto</a>
+            <a href="#" class="text-sm font-semibold text-gray-500 hover:text-teal-600">Contacto</a>
         </div>
     </nav>
 
-    <!-- Contenido Principal -->
+    <!-- Contenido Principal (SOLO FOTOS Y VIDEOS) -->
     <main class="max-w-6xl mx-auto mt-8 p-4">
-        
-        <!-- Cabecera simple -->
-        <header class="mb-10 text-center">
-            <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-2">Galería Multimedia</h2>
-            <div class="h-1 w-20 bg-teal-500 mx-auto rounded"></div>
-        </header>
-
-        <!-- Grid de Tarjetas -->
         <div id="items-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <!-- Cargando datos... -->
+            <!-- Cargando... -->
             <div class="col-span-full flex justify-center py-20">
                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
             </div>
         </div>
-
     </main>
+
+    <!-- 🎵 REPRODUCTOR FLOTANTE 🎵 -->
+    <div id="music-widget" class="fixed bottom-6 right-6 z-50 flex flex-col items-end hidden">
+        
+        <!-- Menú / Playlist (Oculto por defecto) -->
+        <div id="music-menu" class="bg-white/90 backdrop-blur-md border border-gray-200 shadow-2xl rounded-2xl p-4 mb-4 w-72 transform scale-90 opacity-0 pointer-events-none transition-all duration-300 origin-bottom-right">
+            <div class="flex justify-between items-center mb-3 border-b border-gray-200 pb-2">
+                <h3 class="font-bold text-gray-800 text-sm flex items-center gap-2">
+                    <i class="ph-fill ph-playlist text-teal-600"></i> Playlist
+                </h3>
+                <!-- Controles Mini -->
+                <div class="flex gap-2">
+                    <button onclick="togglePlay()" class="text-gray-600 hover:text-teal-600">
+                        <i id="mini-play-btn" class="ph-fill ph-play"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Lista de canciones -->
+            <div id="playlist-container" class="max-h-60 overflow-y-auto scrollbar-hide space-y-2">
+                <!-- Se llena con JS -->
+            </div>
+            
+            <div class="mt-3 pt-2 border-t border-gray-200 text-xs text-center text-gray-400">
+                Selecciona una canción
+            </div>
+        </div>
+
+        <!-- Botón Disco Flotante -->
+        <button onclick="toggleMusicMenu()" class="relative group">
+            <!-- Efecto de onda cuando suena -->
+            <div id="music-wave" class="absolute inset-0 bg-teal-500 rounded-full opacity-0 animate-ping hidden"></div>
+            
+            <!-- El Disco -->
+            <div id="vinyl-record" class="w-16 h-16 bg-black rounded-full border-4 border-white shadow-xl flex items-center justify-center relative spin-slow spin-paused transition-transform hover:scale-110 active:scale-95">
+                <!-- Brillo del vinilo -->
+                <div class="absolute inset-0 rounded-full border border-white/20 m-1"></div>
+                <div class="absolute inset-0 rounded-full border border-white/20 m-3"></div>
+                <!-- Centro -->
+                <div class="w-6 h-6 bg-teal-500 rounded-full flex items-center justify-center border-2 border-white relative z-10">
+                    <div class="w-1 h-1 bg-black rounded-full"></div>
+                </div>
+                <!-- Icono de nota flotando -->
+                <i class="ph-fill ph-music-notes text-white absolute -top-1 -right-1 bg-teal-600 rounded-full p-1 text-xs shadow-sm"></i>
+            </div>
+        </button>
+
+        <!-- Elemento Audio Invisible -->
+        <audio id="audio-player"></audio>
+    </div>
 
     <!-- LÓGICA -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // ==========================================
-        // 🟢 TUS CLAVES CONFIGURADAS 🟢
-        // ==========================================
-
+        // 🟢 CONFIGURACIÓN
         const firebaseConfig = {
             apiKey: "AIzaSyDr490X-m0dw5wnQaTmyhjjzd1TRJgEMcs",
             authDomain: "mi-web-app-f0523.firebaseapp.com",
@@ -73,111 +110,158 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Consultar productos ordenados por fecha
+        // Variables Globales de Música
+        let playlist = [];
+        let currentTrack = null;
+        const audioPlayer = document.getElementById('audio-player');
+        const vinylRecord = document.getElementById('vinyl-record');
+        const musicWave = document.getElementById('music-wave');
+        const musicMenu = document.getElementById('music-menu');
+        const miniPlayBtn = document.getElementById('mini-play-btn');
+
+        // --- MANEJO DE DATOS ---
         const q = query(collection(db, "productos"), orderBy("createdAt", "desc"));
 
         onSnapshot(q, (snapshot) => {
-            const container = document.getElementById('items-container');
-            container.innerHTML = ''; 
+            const feedContainer = document.getElementById('items-container');
+            const playlistContainer = document.getElementById('playlist-container');
+            const musicWidget = document.getElementById('music-widget');
+            
+            feedContainer.innerHTML = '';
+            playlistContainer.innerHTML = '';
+            playlist = []; // Reiniciar playlist local
 
             if(snapshot.empty) {
-                container.innerHTML = `
-                    <div class="col-span-full text-center py-20 bg-white rounded-xl shadow-sm">
-                        <i class="ph-duotone ph-ghost text-6xl text-gray-300 mb-4"></i>
-                        <p class="text-gray-500">No hay contenido publicado aún.</p>
-                    </div>`;
+                feedContainer.innerHTML = '<div class="col-span-full text-center py-20 text-gray-400">Sin contenido.</div>';
                 return;
             }
 
             snapshot.forEach((doc) => {
                 const item = doc.data();
-                
-                // --- LÓGICA DE VISUALIZACIÓN MULTIMEDIA ---
-                let mediaHTML = '';
-                let badge = '';
-                
-                if (item.url) {
-                    if (item.tipo === 'video') {
-                        // --- VIDEO ---
-                        badge = '<span class="text-xs text-red-500 font-semibold flex items-center gap-1"><i class="ph-fill ph-video-camera"></i> Video</span>';
-                        mediaHTML = `
-                            <div class="relative w-full pt-[56.25%] bg-black">
-                                <video controls class="absolute top-0 left-0 w-full h-full object-contain">
-                                    <source src="${item.url}" type="video/mp4">
-                                    <source src="${item.url}" type="video/webm">
-                                </video>
-                            </div>`;
-                            
-                    } else if (item.tipo === 'audio') {
-                        // --- AUDIO (MÚSICA AMBIENTAL) ---
-                        badge = '<span class="text-xs text-yellow-600 font-semibold flex items-center gap-1"><i class="ph-fill ph-music-notes"></i> Audio</span>';
-                        mediaHTML = `
-                            <div class="w-full h-64 bg-slate-900 flex flex-col items-center justify-center relative overflow-hidden group">
-                                <!-- Fondo decorativo -->
-                                <div class="absolute inset-0 bg-gradient-to-tr from-indigo-900 to-purple-800 opacity-50"></div>
-                                
-                                <!-- Disco Giratorio -->
-                                <div class="relative w-32 h-32 rounded-full bg-black border-4 border-slate-800 shadow-2xl flex items-center justify-center spin-record">
-                                    <!-- Surcos del vinilo -->
-                                    <div class="absolute inset-0 rounded-full border border-white/10" style="margin: 4px;"></div>
-                                    <div class="absolute inset-0 rounded-full border border-white/10" style="margin: 10px;"></div>
-                                    <div class="absolute inset-0 rounded-full border border-white/10" style="margin: 16px;"></div>
-                                    <!-- Centro del disco -->
-                                    <div class="w-12 h-12 rounded-full bg-teal-500 border-2 border-white flex items-center justify-center">
-                                        <div class="w-1 h-1 bg-black rounded-full"></div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Reproductor -->
-                                <div class="absolute bottom-0 w-full px-4 pb-2 pt-8 bg-gradient-to-t from-black/80 to-transparent">
-                                    <audio controls class="w-full h-8 block opacity-90 hover:opacity-100 transition-opacity">
-                                        <source src="${item.url}" type="audio/mpeg">
-                                        <source src="${item.url}" type="audio/wav">
-                                    </audio>
-                                </div>
-                            </div>`;
 
-                    } else {
-                        // --- IMAGEN (Default) ---
-                        badge = '<span class="text-xs text-purple-500 font-semibold flex items-center gap-1"><i class="ph-fill ph-image"></i> Imagen</span>';
-                        mediaHTML = `
-                            <div class="w-full h-64 overflow-hidden relative group">
-                                <img src="${item.url}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" alt="${item.titulo}">
-                                <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>
-                            </div>`;
-                    }
-                } else {
-                    // --- SOLO TEXTO ---
-                    badge = '<span class="text-xs text-gray-400 font-semibold flex items-center gap-1"><i class="ph-fill ph-text-t"></i> Texto</span>';
-                    mediaHTML = `
-                        <div class="w-full h-32 bg-gradient-to-br from-teal-50 to-indigo-50 flex items-center justify-center">
-                            <i class="ph-duotone ph-newspaper text-4xl text-teal-200"></i>
-                        </div>`;
-                }
-
-                // Generar Tarjeta Completa
-                const card = `
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-shadow duration-300 animate-fade-in flex flex-col">
-                        ${mediaHTML}
-                        
-                        <div class="p-5 flex flex-col flex-grow">
-                            <div class="flex justify-between items-start mb-2">
-                                <h3 class="font-bold text-xl text-gray-900 leading-tight">${item.titulo}</h3>
-                                ${item.precio ? `<span class="bg-teal-50 text-teal-700 text-xs font-bold px-2 py-1 rounded-full border border-teal-100">${item.precio}</span>` : ''}
-                            </div>
-                            
-                            <p class="text-gray-600 text-sm leading-relaxed mb-4 flex-grow whitespace-pre-line">${item.desc || ''}</p>
-                            
-                            <div class="pt-4 border-t border-gray-100 flex justify-between items-center text-xs text-gray-400">
-                                ${badge}
-                                <button class="text-teal-600 font-semibold hover:underline">Ver detalles</button>
+                // 🎵 SI ES AUDIO: Va al widget flotante
+                if (item.tipo === 'audio') {
+                    playlist.push(item);
+                    
+                    // Crear elemento en la lista del menú
+                    const songDiv = document.createElement('div');
+                    songDiv.className = "p-2 hover:bg-teal-50 rounded cursor-pointer flex justify-between items-center group transition-colors border-b border-gray-100 last:border-0";
+                    songDiv.innerHTML = `
+                        <div class="flex items-center gap-2 overflow-hidden">
+                            <i class="ph-fill ph-music-note text-gray-400 group-hover:text-teal-600"></i>
+                            <div class="min-w-0">
+                                <div class="text-sm font-bold text-gray-700 truncate">${item.titulo}</div>
+                                <div class="text-xs text-gray-400 truncate">${item.precio || 'Artista desconocido'}</div>
                             </div>
                         </div>
-                    </div>
-                `;
-                container.innerHTML += card;
+                        <i class="ph-fill ph-play-circle text-teal-600 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                    `;
+                    songDiv.onclick = () => playSong(item.url, item.titulo);
+                    playlistContainer.appendChild(songDiv);
+                } 
+                // 📸 SI ES IMAGEN/VIDEO: Va al muro
+                else {
+                    renderFeedItem(item, feedContainer);
+                }
             });
+
+            // Mostrar el widget solo si hay música
+            if (playlist.length > 0) {
+                musicWidget.classList.remove('hidden');
+            } else {
+                musicWidget.classList.add('hidden');
+            }
         });
+
+        // --- FUNCIONES DEL REPRODUCTOR ---
+
+        // 1. Abrir/Cerrar Menú
+        window.toggleMusicMenu = () => {
+            const isClosed = musicMenu.classList.contains('pointer-events-none');
+            if (isClosed) {
+                // Abrir
+                musicMenu.classList.remove('opacity-0', 'pointer-events-none', 'scale-90');
+                musicMenu.classList.add('opacity-100', 'scale-100');
+            } else {
+                // Cerrar
+                musicMenu.classList.add('opacity-0', 'pointer-events-none', 'scale-90');
+                musicMenu.classList.remove('opacity-100', 'scale-100');
+            }
+        };
+
+        // 2. Reproducir Canción
+        window.playSong = (url, titulo) => {
+            audioPlayer.src = url;
+            audioPlayer.play();
+            updateUI(true);
+            console.log("Reproduciendo:", titulo);
+        };
+
+        // 3. Pausa/Play General
+        window.togglePlay = () => {
+            if (audioPlayer.paused) {
+                if(audioPlayer.src) {
+                    audioPlayer.play();
+                    updateUI(true);
+                } else if (playlist.length > 0) {
+                    // Si no hay nada seleccionado, tocar la primera
+                    playSong(playlist[0].url, playlist[0].titulo);
+                }
+            } else {
+                audioPlayer.pause();
+                updateUI(false);
+            }
+        };
+
+        // 4. Actualizar estado visual (Giro del disco, iconos)
+        function updateUI(isPlaying) {
+            if (isPlaying) {
+                vinylRecord.classList.remove('spin-paused'); // Girar
+                musicWave.classList.remove('hidden');       // Ondas
+                miniPlayBtn.classList.replace('ph-play', 'ph-pause');
+            } else {
+                vinylRecord.classList.add('spin-paused');    // Parar
+                musicWave.classList.add('hidden');
+                miniPlayBtn.classList.replace('ph-pause', 'ph-play');
+            }
+        }
+
+        // --- RENDERIZADO DEL MURO (VISUAL) ---
+        function renderFeedItem(item, container) {
+            let mediaHTML = '';
+            
+            if (item.url) {
+                if (item.tipo === 'video') {
+                    mediaHTML = `
+                        <div class="relative w-full pt-[56.25%] bg-black">
+                            <video controls class="absolute top-0 left-0 w-full h-full object-contain">
+                                <source src="${item.url}" type="video/mp4">
+                            </video>
+                        </div>`;
+                } else {
+                    mediaHTML = `
+                        <div class="w-full h-64 overflow-hidden relative group cursor-pointer">
+                            <img src="${item.url}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
+                        </div>`;
+                }
+            } else {
+                mediaHTML = `<div class="w-full h-32 bg-gray-100 flex items-center justify-center text-gray-400">Texto</div>`;
+            }
+
+            const card = document.createElement('div');
+            card.className = "bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-shadow duration-300 animate-fade-in flex flex-col";
+            card.innerHTML = `
+                ${mediaHTML}
+                <div class="p-5 flex flex-col flex-grow">
+                    <h3 class="font-bold text-xl text-gray-900 mb-2">${item.titulo}</h3>
+                    <p class="text-gray-600 text-sm mb-4 flex-grow whitespace-pre-line">${item.desc || ''}</p>
+                    <div class="pt-4 border-t border-gray-100 text-xs text-teal-600 font-bold">
+                        ${item.precio || ''}
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        }
     </script>
 </body>
 </html>
