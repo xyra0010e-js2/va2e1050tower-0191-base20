@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Panel de Control</title>
+    <title>Admin - Panel Multimedia</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 </head>
@@ -12,7 +12,7 @@
     <div class="max-w-3xl mx-auto">
         <header class="flex justify-between items-center mb-8 border-b border-slate-700 pb-4">
             <h1 class="text-2xl font-bold text-teal-400 flex items-center gap-2">
-                <i class="ph-fill ph-rocket-launch"></i> Admin Pro
+                <i class="ph-fill ph-faders"></i> Admin Master
             </h1>
             <a href="index.html" target="_blank" class="text-slate-400 hover:text-white text-sm underline">Ver mi Web -></a>
         </header>
@@ -25,28 +25,30 @@
             
             <div class="grid gap-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input type="text" id="titulo" placeholder="Título (Ej: Mi Viaje, Camiseta Roja)" 
+                    <input type="text" id="titulo" placeholder="Título (Ej: Mi Canción, Video Nuevo)" 
                         class="w-full bg-slate-700 rounded p-3 text-white border border-slate-600 focus:border-teal-500 outline-none transition-colors">
                     
-                    <input type="text" id="precio" placeholder="Precio o Subtítulo (Opcional)" 
+                    <input type="text" id="precio" placeholder="Precio / Artista / Subtítulo" 
                         class="w-full bg-slate-700 rounded p-3 text-white border border-slate-600 focus:border-teal-500 outline-none transition-colors">
                 </div>
 
-                <textarea id="desc" placeholder="Descripción detallada..." rows="3" 
+                <textarea id="desc" placeholder="Descripción..." rows="3" 
                     class="w-full bg-slate-700 rounded p-3 text-white border border-slate-600 focus:border-teal-500 outline-none transition-colors"></textarea>
 
                 <!-- Zona de Subida Cloudinary -->
                 <div class="bg-slate-900/50 p-4 rounded-lg border-2 border-dashed border-slate-600 hover:border-teal-500/50 transition-colors relative group">
                     <label class="text-sm text-slate-400 block mb-2 font-semibold">
-                        <i class="ph-bold ph-image"></i> Foto o Video (Se sube a Cloudinary)
+                        <i class="ph-bold ph-upload-simple"></i> Archivo Multimedia
                     </label>
-                    <input type="file" id="archivo" class="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-teal-600 file:text-white hover:file:bg-teal-700 cursor-pointer">
+                    <!-- Actualizado para aceptar audio -->
+                    <input type="file" id="archivo" accept="image/*,video/*,audio/*" class="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-teal-600 file:text-white hover:file:bg-teal-700 cursor-pointer">
+                    <p class="text-xs text-slate-500 mt-2">Soporta: Fotos (JPG, PNG), Video (MP4) y Audio (MP3, WAV)</p>
                     
                     <!-- Mensaje de carga -->
                     <div id="loading-msg" class="hidden absolute inset-0 bg-slate-900/90 flex flex-col items-center justify-center rounded-lg z-10">
                         <i class="ph-bold ph-spinner animate-spin text-3xl text-teal-400 mb-2"></i>
-                        <span class="text-teal-400 font-bold text-sm">Subiendo archivo a la nube...</span>
-                        <span class="text-xs text-slate-400">Por favor no cierres la página</span>
+                        <span class="text-teal-400 font-bold text-sm">Subiendo a la nube...</span>
+                        <span class="text-xs text-slate-400">Por favor espera</span>
                     </div>
                 </div>
 
@@ -57,7 +59,7 @@
         </div>
 
         <!-- Lista de Publicaciones -->
-        <h3 class="text-slate-400 text-sm uppercase font-bold mb-4 tracking-wider">Historial de Publicaciones</h3>
+        <h3 class="text-slate-400 text-sm uppercase font-bold mb-4 tracking-wider">Historial</h3>
         <div id="lista-items" class="space-y-3 pb-10">
             <p class="text-center text-slate-600 py-4">Cargando lista...</p>
         </div>
@@ -95,8 +97,12 @@
             const formData = new FormData();
             formData.append('file', file);
             formData.append('upload_preset', UPLOAD_PRESET);
-            // Folder opcional para organizar (se crea solo)
             formData.append('folder', 'mi_app_web'); 
+
+            // Detectar tipo manualmente para forzarlo si es audio (Cloudinary a veces confunde audio con video)
+            let tipoManual = 'image';
+            if (file.type.startsWith('video')) tipoManual = 'video';
+            if (file.type.startsWith('audio')) tipoManual = 'audio';
 
             const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`;
 
@@ -104,10 +110,12 @@
                 const response = await fetch(url, { method: 'POST', body: formData });
                 if (!response.ok) throw new Error('Error en la subida');
                 const data = await response.json();
-                return { url: data.secure_url, tipo: data.resource_type }; // 'image', 'video'
+                
+                // Usamos nuestro tipo manual para mayor precisión
+                return { url: data.secure_url, tipo: tipoManual }; 
             } catch (error) {
                 console.error("Error Cloudinary:", error);
-                alert("Hubo un error subiendo la imagen. Revisa tu conexión.");
+                alert("Hubo un error subiendo el archivo. Revisa tu conexión.");
                 return null;
             }
         }
@@ -120,25 +128,22 @@
             const archivoInput = document.getElementById('archivo');
             const loadingMsg = document.getElementById('loading-msg');
 
-            if(!titulo) return alert("¡Ey! El título es obligatorio.");
+            if(!titulo) return alert("El título es obligatorio.");
 
-            // Mostrar "Cargando..."
             loadingMsg.classList.remove('hidden');
 
             try {
                 let mediaData = { url: "", tipo: "" };
 
-                // A) Si seleccionaste archivo, súbelo primero
                 if (archivoInput.files.length > 0) {
                     const resultado = await subirACloudinary(archivoInput.files[0]);
                     if (!resultado) {
                         loadingMsg.classList.add('hidden');
-                        return; // Parar si falló la subida
+                        return;
                     }
                     mediaData = resultado;
                 }
 
-                // B) Guardar datos en Firebase
                 await addDoc(collection(db, "productos"), {
                     titulo: titulo,
                     precio: precio,
@@ -148,8 +153,8 @@
                     createdAt: new Date()
                 });
 
-                // C) Limpiar
                 alert("¡Publicado con éxito!");
+                // Limpiar campos
                 document.getElementById('titulo').value = "";
                 document.getElementById('precio').value = "";
                 document.getElementById('desc').value = "";
@@ -157,7 +162,7 @@
                 
             } catch (e) {
                 console.error(e);
-                alert("Error guardando en base de datos: " + e.message);
+                alert("Error: " + e.message);
             } finally {
                 loadingMsg.classList.add('hidden');
             }
@@ -179,10 +184,11 @@
                 const div = document.createElement('div');
                 div.className = "bg-slate-800 p-4 rounded-lg border border-slate-700 flex justify-between items-center group hover:border-slate-500 transition-colors";
                 
-                // Icono según tipo
+                // Icono Inteligente
                 let icono = '<i class="ph-fill ph-text-t text-slate-500 text-xl"></i>';
                 if(item.tipo === 'image') icono = '<i class="ph-fill ph-image text-purple-400 text-xl"></i>';
                 if(item.tipo === 'video') icono = '<i class="ph-fill ph-film-strip text-red-400 text-xl"></i>';
+                if(item.tipo === 'audio') icono = '<i class="ph-fill ph-disc text-yellow-400 text-xl animate-spin-slow"></i>';
 
                 div.innerHTML = `
                     <div class="flex items-center gap-3 overflow-hidden">
@@ -191,7 +197,7 @@
                         </div>
                         <div class="min-w-0">
                             <h4 class="font-bold text-white truncate">${item.titulo}</h4>
-                            <p class="text-xs text-slate-400 truncate">${item.precio || 'Sin precio'} - ${item.createdAt ? 'Publicado' : ''}</p>
+                            <p class="text-xs text-slate-400 truncate">${item.tipo ? item.tipo.toUpperCase() : 'TEXTO'} - ${item.createdAt ? 'Publicado' : ''}</p>
                         </div>
                     </div>
                     <button onclick="borrar('${doc.id}')" 
@@ -204,10 +210,14 @@
         });
 
         window.borrar = async (id) => {
-            if(confirm("¿Seguro que quieres eliminar esto? No se puede deshacer.")) {
+            if(confirm("¿Eliminar publicación?")) {
                 await deleteDoc(doc(db, "productos", id));
             }
         }
     </script>
+    <style>
+        .animate-spin-slow { animation: spin 3s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    </style>
 </body>
 </html>
