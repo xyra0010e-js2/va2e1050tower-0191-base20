@@ -30,23 +30,35 @@
         @keyframes spin { 100% { transform: rotate(360deg); } }
         .sidebar-transition { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         
-        /* SEGURIDAD EXTREMA VIDEO */
-        .video-locked {
-            pointer-events: none !important; /* Invisible al tacto */
-            user-select: none !important;
-            -webkit-user-select: none !important;
-            -webkit-touch-callout: none !important; /* Deshabilita menú iOS */
+        /* SEGURIDAD VIDEO */
+        .video-locked { pointer-events: none !important; user-select: none !important; -webkit-user-select: none !important; -webkit-touch-callout: none !important; }
+        .click-shield { position: absolute; inset: 0; z-index: 20; background: rgba(255,255,255,0); -webkit-user-select: none; -webkit-touch-callout: none; user-select: none; }
+
+        /* EFECTO AURORA BOREAL (Magic Glow) */
+        @keyframes aurora-flash {
+            0% { 
+                box-shadow: 0 0 0 0 rgba(0,0,0,0); 
+                border-color: rgba(255,255,255,0.1);
+            }
+            20% { 
+                /* Rosa, Cian, Blanco, Naranja Claro */
+                box-shadow: 
+                    0 0 20px 5px rgba(255, 105, 180, 0.5),   /* Rosa */
+                    0 0 40px 10px rgba(0, 255, 255, 0.4),    /* Cian */
+                    0 0 60px 15px rgba(255, 255, 255, 0.3),  /* Blanco */
+                    0 0 80px 20px rgba(255, 200, 150, 0.3);  /* Naranja */
+                border-color: rgba(255, 255, 255, 0.9);
+            }
+            100% { 
+                box-shadow: 0 0 0 0 rgba(0,0,0,0); 
+                border-color: rgba(255,255,255,0.1); /* Volver al borde original */
+            }
         }
-        
-        /* CAPA ESCUDO */
-        .click-shield {
-            position: absolute;
-            inset: 0;
-            z-index: 20; 
-            background: rgba(255,255,255,0); /* Transparente */
-            -webkit-user-select: none;
-            -webkit-touch-callout: none;
-            user-select: none;
+
+        .aurora-active {
+            animation: aurora-flash 2s ease-out forwards;
+            position: relative;
+            z-index: 10;
         }
     </style>
 </head>
@@ -85,10 +97,14 @@
                 <div class="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400"><i class="ph-fill ph-images text-lg"></i></div>
                 <span class="font-medium group-hover:translate-x-1 transition-transform">Galería Multimedia</span>
             </button>
+            <button onclick="switchView('vision')" class="w-full text-left p-3 rounded-xl flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors group">
+                <div class="w-8 h-8 rounded-full bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center text-teal-600 dark:text-teal-400"><i class="ph-fill ph-magic-wand text-lg"></i></div>
+                <span class="font-medium group-hover:translate-x-1 transition-transform">Vision Prompt</span>
+            </button>
         </div>
     </aside>
 
-    <!-- VISTA 1: INICIO (Slots Protegidos) -->
+    <!-- VISTA 1: INICIO -->
     <div id="view-home" class="animate-fade-in pt-16">
         <section class="relative w-full h-[85vh] bg-gradient-to-b from-[#1a1a2e] to-black overflow-hidden flex flex-col items-center justify-center text-center">
             <div class="absolute inset-0">
@@ -106,7 +122,6 @@
                 </div>
             </div>
         </section>
-
         <section class="bg-black py-12 px-4 border-t border-white/10 relative">
             <div class="max-w-7xl mx-auto">
                 <h2 class="text-2xl font-bold text-white mb-6 px-2">Explora con Galaxy</h2>
@@ -126,8 +141,6 @@
             <p class="text-gray-500 dark:text-gray-400">Fotos y Videos subidos desde el Admin</p>
         </header>
         <div id="items-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto pb-24"></div>
-        
-        <!-- Widget Música -->
         <div id="music-widget" class="fixed bottom-6 right-6 z-50 flex flex-col items-end hidden">
             <div id="music-menu" class="bg-white/90 dark:bg-gray-800/95 backdrop-blur-md border border-gray-200 dark:border-gray-700 shadow-2xl rounded-2xl p-4 mb-4 w-72 transform scale-90 opacity-0 pointer-events-none transition-all duration-300 origin-bottom-right">
                 <div class="flex justify-between items-center mb-3 border-b border-gray-200 dark:border-gray-600 pb-2">
@@ -148,6 +161,130 @@
         </div>
     </div>
 
+    <!-- VISTA 3: VISION PROMPT (CON AURORA) -->
+    <div id="view-vision" class="hidden pt-20 px-4 min-h-screen bg-gray-50 dark:bg-[#0a0a0a]">
+        <div class="max-w-6xl mx-auto">
+            <header class="mb-10 text-center">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">Vision Prompt</h2>
+                <p class="text-gray-500 dark:text-gray-400">Ensambla prompts profesionales con IA</p>
+            </header>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pb-20">
+                
+                <!-- COLUMNA IZQUIERDA: CONTROLES -->
+                <!-- ID añadido para el efecto Aurora -->
+                <div id="vision-controls-box" class="bg-white dark:bg-darkcard p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-white/10 space-y-6 transition-all duration-300">
+                    
+                    <!-- 1. NUEVOS SELECTORES SUPERIORES -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-teal-600 dark:text-teal-400 mb-1 uppercase tracking-wide">Formato</label>
+                            <select id="p-format" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-gray-700 rounded-lg p-3 text-sm dark:text-white outline-none focus:border-teal-500 transition-colors">
+                                <option value="">(Libre)</option>
+                                <option value="Cinematic Photography">Fotografía Cine</option>
+                                <option value="Digital Illustration">Ilustración Digital</option>
+                                <option value="3D Render">Render 3D</option>
+                                <option value="Anime Still">Anime / Manga</option>
+                                <option value="Oil Painting">Pintura al Óleo</option>
+                                <option value="Polaroid Photo">Foto Polaroid</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-teal-600 dark:text-teal-400 mb-1 uppercase tracking-wide">Sujeto / Plano</label>
+                            <select id="p-subject" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-gray-700 rounded-lg p-3 text-sm dark:text-white outline-none focus:border-teal-500 transition-colors">
+                                <option value="">(Libre)</option>
+                                <option value="Portrait of">Retrato</option>
+                                <option value="Full body shot of">Cuerpo Entero</option>
+                                <option value="Landscape of">Paisaje</option>
+                                <option value="Close-up of">Primer Plano</option>
+                                <option value="Macro shot of">Macro</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 2. IDEA PRINCIPAL -->
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Tu Idea / Concepto</label>
+                        <textarea id="p-concept" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-gray-700 rounded-xl p-4 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none h-24 resize-none" placeholder="Ej: un astronauta meditando en un jardín zen flotante..."></textarea>
+                    </div>
+
+                    <!-- 3. SELECTORES INFERIORES -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 mb-1">Estilo Visual</label>
+                            <select id="p-style" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-gray-700 rounded-lg p-3 text-sm dark:text-white outline-none">
+                                <option value="">(Ninguno)</option>
+                                <option value="Cyberpunk, neon lights">Cyberpunk</option>
+                                <option value="Studio Ghibli style">Estilo Ghibli</option>
+                                <option value="Minimalist, clean lines">Minimalista</option>
+                                <option value="Vintage, retro 80s">Retro 80s</option>
+                                <option value="Fantasy, magical atmosphere">Fantasía Mágica</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 mb-1">Iluminación</label>
+                            <select id="p-lighting" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-gray-700 rounded-lg p-3 text-sm dark:text-white outline-none">
+                                <option value="">(Normal)</option>
+                                <option value="Golden hour, warm lighting">Hora Dorada</option>
+                                <option value="Dramatic cinematic lighting">Dramática</option>
+                                <option value="Soft studio lighting">Estudio Suave</option>
+                                <option value="Bioluminescent glow">Bioluminiscente</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 mb-1">Cámara</label>
+                            <select id="p-camera" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-gray-700 rounded-lg p-3 text-sm dark:text-white outline-none">
+                                <option value="">(Normal)</option>
+                                <option value="Wide angle shot">Gran Angular</option>
+                                <option value="Drone view, aerial shot">Vista Aérea</option>
+                                <option value="Low angle shot">Contrapicado</option>
+                                <option value="Fish eye lens">Ojo de Pez</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 mb-1">Aspecto</label>
+                            <select id="p-ar" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-gray-700 rounded-lg p-3 text-sm dark:text-white outline-none">
+                                <option value="--ar 16:9">16:9 (Cine)</option>
+                                <option value="--ar 9:16">9:16 (Story)</option>
+                                <option value="--ar 1:1">1:1 (Cuadrado)</option>
+                                <option value="--ar 4:5">4:5 (Post)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button onclick="assemblePrompt()" class="w-full bg-teal-600 hover:bg-teal-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-teal-500/20 active:scale-95 transition-all flex justify-center items-center gap-2 relative overflow-hidden group">
+                        <span class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></span>
+                        <i class="ph-bold ph-magic-wand"></i> Generar Prompt
+                    </button>
+                </div>
+
+                <!-- COLUMNA DERECHA: RESULTADO -->
+                <div class="bg-gray-900 text-white p-6 rounded-2xl shadow-2xl border border-gray-700 relative group h-fit">
+                    <div class="absolute top-4 right-4 opacity-50 group-hover:opacity-100 transition-opacity">
+                        <button onclick="copyPrompt()" class="bg-white/10 hover:bg-white/20 p-2 rounded-lg text-sm flex items-center gap-2 transition-colors">
+                            <i class="ph-bold ph-copy"></i> Copiar
+                        </button>
+                    </div>
+                    <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Prompt Final</h3>
+                    
+                    <div class="bg-black/50 rounded-xl p-4 min-h-[200px] border border-white/5 font-mono text-sm leading-relaxed text-teal-300 shadow-inner" id="prompt-output">
+                        Configura las opciones y escribe tu idea para generar el prompt perfecto...
+                    </div>
+                    
+                    <div class="mt-4 flex flex-wrap gap-2 text-xs text-gray-500">
+                        <span class="bg-white/5 px-2 py-1 rounded border border-white/5">Midjourney v6</span>
+                        <span class="bg-white/5 px-2 py-1 rounded border border-white/5">DALL-E 3</span>
+                        <span class="bg-white/5 px-2 py-1 rounded border border-white/5">Stable Diffusion</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
     <!-- JS -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -165,19 +302,85 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // UI & ROUTER
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark');
         window.toggleTheme = () => { document.documentElement.classList.toggle('dark'); localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light'; };
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('sidebar-overlay');
         window.toggleSidebar = () => { sidebar.classList.toggle('-translate-x-full'); overlay.classList.toggle('hidden'); setTimeout(() => overlay.classList.toggle('opacity-0'), 10); };
+        
         window.switchView = (viewName) => {
-            const hv = document.getElementById('view-home'), gv = document.getElementById('view-gallery');
-            if (viewName === 'home') { hv.classList.remove('hidden'); gv.classList.add('hidden'); }
-            else { hv.classList.add('hidden'); gv.classList.remove('hidden'); }
+            const views = ['home', 'gallery', 'vision'];
+            views.forEach(v => document.getElementById(`view-${v}`).classList.add('hidden'));
+            document.getElementById(`view-${viewName}`).classList.remove('hidden');
             toggleSidebar();
         };
 
-        // SLOTS CON PROTECCIÓN JS EXTRA
+        // --- VISION PROMPT ---
+        window.assemblePrompt = () => {
+            // 1. Obtener valores
+            const concept = document.getElementById('p-concept').value.trim();
+            const format = document.getElementById('p-format').value;
+            const subject = document.getElementById('p-subject').value;
+            const style = document.getElementById('p-style').value;
+            const lighting = document.getElementById('p-lighting').value;
+            const camera = document.getElementById('p-camera').value;
+            const ar = document.getElementById('p-ar').value;
+
+            if(!concept) return alert("¡Escribe tu idea principal!");
+
+            // 2. Construir frase gramaticalmente lógica
+            let parts = [];
+            
+            // Inicio: "Photography of..." / "Portrait of..."
+            if(format) parts.push(format + (subject ? "" : " of")); 
+            if(subject) parts.push(subject);
+            
+            // Concepto central
+            parts.push(concept);
+
+            // Detalles técnicos y estilo
+            if(style) parts.push(style);
+            if(lighting) parts.push(lighting);
+            if(camera) parts.push(camera);
+            
+            // Calidad siempre
+            parts.push("8k resolution, highly detailed, masterpiece, trending on artstation");
+            
+            // Aspect Ratio al final
+            let finalPrompt = parts.join(", ");
+            if(ar) finalPrompt += ` ${ar}`;
+
+            // 3. Mostrar resultado
+            const output = document.getElementById('prompt-output');
+            output.innerText = finalPrompt;
+
+            // 4. EFECTO AURORA BOREAL
+            const box = document.getElementById('vision-controls-box');
+            
+            // Reiniciar animación si ya estaba activa
+            box.classList.remove('aurora-active');
+            void box.offsetWidth; // Trigger reflow
+            box.classList.add('aurora-active');
+
+            // Quitar clase después de 2s
+            setTimeout(() => {
+                box.classList.remove('aurora-active');
+            }, 2000);
+        };
+
+        window.copyPrompt = () => {
+            const text = document.getElementById('prompt-output').innerText;
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            try { document.execCommand('copy'); alert("Prompt copiado al portapapeles"); } 
+            catch (e) { alert("Error copiando"); }
+            document.body.removeChild(textarea);
+        };
+
+        // --- SLOTS (Igual que antes) ---
         const slotContainer = document.getElementById('video-scroll-container');
         for (let i = 1; i <= 5; i++) {
             const slotId = `slot_${i}`;
@@ -192,46 +395,22 @@
                 if (docSnap.exists() && docSnap.data().url) {
                     const d = docSnap.data();
                     const isVideo = d.tipo === 'video';
-                    
-                    let contentHTML = isVideo 
+                    let content = isVideo 
                         ? `<video id="vid-${slotId}" src="${d.url}" class="absolute inset-0 w-full h-full object-cover transform scale-105 video-locked" autoplay loop muted playsinline disablePictureInPicture></video>`
                         : `<img src="${d.url}" class="absolute inset-0 w-full h-full object-cover">`;
-                    
-                    let audioBtn = isVideo 
-                        ? `<button onclick="toggleSlotAudio('vid-${slotId}', this)" class="absolute top-4 right-4 z-30 w-10 h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white border border-white/10 transition-colors cursor-pointer active:scale-95 shadow-lg"><i class="ph-fill ph-speaker-slash text-lg"></i></button>` 
-                        : '';
-
-                    el.innerHTML = `
-                        ${contentHTML}
-                        <!-- CAPA ESCUDO (CLICK SHIELD) -->
-                        <div class="click-shield"></div>
-                        <div class="absolute inset-0 z-20 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-90 pointer-events-none"></div>
-                        <div class="absolute bottom-0 left-0 p-6 text-white z-20 w-full pointer-events-none">
-                            <div class="flex items-center gap-2 mb-1">
-                                <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-blue-400 to-purple-500 flex items-center justify-center text-[8px] font-bold">G</div>
-                                <p class="text-xs font-medium text-gray-300 uppercase tracking-wide">${d.autor || 'Galaxy'}</p>
-                            </div>
-                            <h3 class="text-2xl font-bold leading-none tracking-tight">${d.titulo || 'Sin Título'}</h3>
-                        </div>
-                        ${audioBtn}
-                    `;
-                    // Volver a adjuntar listeners a las nuevas capas escudo
+                    let btn = isVideo 
+                        ? `<button onclick="toggleSlotAudio('vid-${slotId}', this)" class="absolute top-4 right-4 z-30 w-10 h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white border border-white/10 active:scale-95"><i class="ph-fill ph-speaker-slash text-lg"></i></button>` : '';
+                    el.innerHTML = `${content}<div class="click-shield"></div><div class="absolute inset-0 z-20 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-90 pointer-events-none"></div><div class="absolute bottom-0 left-0 p-6 text-white z-20 w-full pointer-events-none"><div class="flex items-center gap-2 mb-1"><div class="w-5 h-5 rounded-full bg-gradient-to-tr from-blue-400 to-purple-500 flex items-center justify-center text-[8px] font-bold">G</div><p class="text-xs font-medium text-gray-300 uppercase tracking-wide">${d.autor||'Galaxy'}</p></div><h3 class="text-2xl font-bold leading-none tracking-tight">${d.titulo||'Sin Título'}</h3></div>${btn}`;
                     attachShieldListeners();
-                } else {
-                    el.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-gray-900"><i class="ph-duotone ph-plus text-4xl text-gray-700"></i></div>`;
-                }
+                } else { el.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-gray-900"><i class="ph-duotone ph-plus text-4xl text-gray-700"></i></div>`; }
             });
         }
 
-        // SCRIPT NUCLEAR PARA MATAR EVENTOS DE MENÚ
         function attachShieldListeners() {
-            document.querySelectorAll('.click-shield').forEach(shield => {
-                shield.addEventListener('contextmenu', (e) => e.preventDefault());
-                shield.addEventListener('dragstart', (e) => e.preventDefault());
-                shield.addEventListener('touchstart', (e) => {
-                    // Permitir el click rápido pero matar el hold
-                    // No prevenimos default aquí para permitir scroll
-                }, {passive: false});
+            document.querySelectorAll('.click-shield').forEach(s => {
+                s.addEventListener('contextmenu', e => e.preventDefault());
+                s.addEventListener('dragstart', e => e.preventDefault());
+                s.addEventListener('touchstart', e => {}, {passive:false});
             });
         }
 
@@ -242,6 +421,7 @@
             else { vid.muted = true; icon.className = "ph-fill ph-speaker-slash text-lg"; btn.classList.remove('bg-blue-600/20'); }
         };
 
+        // --- GALERÍA & MÚSICA ---
         let playlist = [];
         const audioPlayer = document.getElementById('audio-player');
         const vinylRecord = document.getElementById('vinyl-record');
