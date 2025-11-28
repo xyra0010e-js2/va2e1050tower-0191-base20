@@ -37,15 +37,15 @@
             100% { box-shadow: 0 0 0 0 rgba(0,0,0,0); border-color: rgba(255,255,255,0.1); }
         }
         .aurora-active { animation: aurora-flash 2s ease-out forwards; position: relative; z-index: 10; }
+        .custom-checkbox input:checked + div { background-color: #14b8a6; border-color: #14b8a6; }
+        .custom-checkbox input:checked + div svg { display: block; }
         
-        /* Checkbox Personalizado */
-        .custom-checkbox input:checked + div {
-            background-color: #14b8a6; /* teal-500 */
-            border-color: #14b8a6;
-        }
-        .custom-checkbox input:checked + div svg {
-            display: block;
-        }
+        /* Estilo código JSON */
+        pre { white-space: pre-wrap; word-wrap: break-word; }
+        .json-key { color: #5eead4; }
+        .json-string { color: #f472b6; }
+        .json-number { color: #fbbf24; }
+        .json-boolean { color: #60a5fa; }
     </style>
 </head>
 <body class="bg-white dark:bg-darkbg text-gray-800 dark:text-white min-h-screen relative overflow-x-hidden select-none" oncontextmenu="return false">
@@ -74,7 +74,7 @@
             <span class="font-bold text-xl tracking-tight">Menú</span>
             <button onclick="toggleSidebar()" class="text-gray-500 hover:text-red-500"><i class="ph-bold ph-x text-xl"></i></button>
         </div>
-        <div class="flex-1 p-4 space-y-2">
+        <div class="flex-1 p-4 space-y-2 overflow-y-auto">
             <button onclick="switchView('home')" class="w-full text-left p-3 rounded-xl flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors group">
                 <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400"><i class="ph-fill ph-house text-lg"></i></div>
                 <span class="font-medium group-hover:translate-x-1 transition-transform">Inicio</span>
@@ -87,10 +87,15 @@
                 <div class="w-8 h-8 rounded-full bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center text-teal-600 dark:text-teal-400"><i class="ph-fill ph-magic-wand text-lg"></i></div>
                 <span class="font-medium group-hover:translate-x-1 transition-transform">Vision Prompt</span>
             </button>
+            <!-- NUEVO BOTÓN -->
+            <button onclick="switchView('json')" class="w-full text-left p-3 rounded-xl flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors group">
+                <div class="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 dark:text-amber-400"><i class="ph-fill ph-code text-lg"></i></div>
+                <span class="font-medium group-hover:translate-x-1 transition-transform">Vision JsonPrompt</span>
+            </button>
         </div>
     </aside>
 
-    <!-- VIEWS -->
+    <!-- VISTA 1: INICIO -->
     <div id="view-home" class="animate-fade-in pt-16">
         <section class="relative w-full h-[85vh] bg-gradient-to-b from-[#1a1a2e] to-black overflow-hidden flex flex-col items-center justify-center text-center">
             <div class="absolute inset-0">
@@ -118,6 +123,7 @@
         </section>
     </div>
 
+    <!-- VISTA 2: GALERIA -->
     <div id="view-gallery" class="hidden pt-20 px-4 min-h-screen bg-gray-50 dark:bg-[#0a0a0a]">
         <header class="mb-10 text-center max-w-4xl mx-auto">
             <h2 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">Mi Contenido</h2>
@@ -144,7 +150,7 @@
         </div>
     </div>
 
-    <!-- VISTA VISION PROMPT -->
+    <!-- VISTA 3: VISION PROMPT -->
     <div id="view-vision" class="hidden pt-20 px-4 min-h-screen bg-gray-50 dark:bg-[#0a0a0a]">
         <div class="max-w-6xl mx-auto">
             <header class="mb-10 text-center">
@@ -153,34 +159,20 @@
             </header>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pb-20">
-                
                 <!-- CONTROLES -->
                 <div id="vision-controls-box" class="bg-white dark:bg-darkcard p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-white/10 space-y-6 transition-all duration-300">
                     <div class="grid grid-cols-2 gap-4">
-                        <!-- FORMATO -->
                         <div>
                             <label class="block text-xs font-bold text-teal-600 dark:text-teal-400 mb-1 uppercase tracking-wide">Formato</label>
-                            <select id="p-formats" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-gray-700 rounded-lg p-3 text-sm dark:text-white outline-none focus:border-teal-500 transition-colors">
-                                <option value="">none</option>
-                            </select>
+                            <select id="p-formats" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-gray-700 rounded-lg p-3 text-sm dark:text-white outline-none focus:border-teal-500 transition-colors"><option value="">none</option></select>
                         </div>
-                        
-                        <!-- MULTI-SELECTOR PERSONAJES (REPARADO Y MEJORADO) -->
                         <div class="relative">
                             <label class="block text-xs font-bold text-teal-600 dark:text-teal-400 mb-1 uppercase tracking-wide">Personajes (Max 5)</label>
-                            
-                            <!-- Botón Trigger -->
                             <div onclick="toggleSubjectDropdown(event)" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-gray-700 rounded-lg p-3 text-sm dark:text-white outline-none focus:border-teal-500 transition-colors cursor-pointer flex justify-between items-center select-none">
                                 <span id="subjects-text" class="truncate text-gray-500">Selecciona...</span>
                                 <i class="ph-bold ph-caret-down text-gray-400"></i>
                             </div>
-
-                            <!-- Menú Dropdown -->
-                            <div id="subjects-dropdown" class="absolute top-full left-0 w-full mt-2 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 hidden max-h-60 overflow-y-auto animate-fade-in custom-scrollbar">
-                                <p class="text-xs text-center text-gray-500 p-3">Cargando...</p>
-                            </div>
-
-                            <!-- Etiquetas (Tags) -->
+                            <div id="subjects-dropdown" class="absolute top-full left-0 w-full mt-2 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 hidden max-h-60 overflow-y-auto animate-fade-in custom-scrollbar"><p class="text-xs text-center text-gray-500 p-3">Cargando...</p></div>
                             <div id="selected-subjects-tags" class="flex flex-wrap gap-2 mt-2 min-h-[24px]"></div>
                         </div>
                     </div>
@@ -191,51 +183,111 @@
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-bold text-gray-500 mb-1">Estilo Visual</label>
-                            <select id="p-styles" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-gray-700 rounded-lg p-3 text-sm dark:text-white outline-none">
-                                <option value="">none</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-gray-500 mb-1">Iluminación</label>
-                            <select id="p-lighting" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-gray-700 rounded-lg p-3 text-sm dark:text-white outline-none">
-                                <option value="">none</option>
-                            </select>
-                        </div>
+                        <div><label class="block text-xs font-bold text-gray-500 mb-1">Estilo Visual</label><select id="p-styles" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-gray-700 rounded-lg p-3 text-sm dark:text-white outline-none"><option value="">none</option></select></div>
+                        <div><label class="block text-xs font-bold text-gray-500 mb-1">Iluminación</label><select id="p-lighting" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-gray-700 rounded-lg p-3 text-sm dark:text-white outline-none"><option value="">none</option></select></div>
                     </div>
-
                     <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-bold text-gray-500 mb-1">Cámara</label>
-                            <select id="p-camera" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-gray-700 rounded-lg p-3 text-sm dark:text-white outline-none">
-                                <option value="">none</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-gray-500 mb-1">Aspecto</label>
-                            <select id="p-ratios" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-gray-700 rounded-lg p-3 text-sm dark:text-white outline-none">
-                                <option value="">none</option>
-                            </select>
-                        </div>
+                        <div><label class="block text-xs font-bold text-gray-500 mb-1">Cámara</label><select id="p-camera" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-gray-700 rounded-lg p-3 text-sm dark:text-white outline-none"><option value="">none</option></select></div>
+                        <div><label class="block text-xs font-bold text-gray-500 mb-1">Aspecto</label><select id="p-ratios" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-gray-700 rounded-lg p-3 text-sm dark:text-white outline-none"><option value="">none</option></select></div>
                     </div>
-
-                    <button onclick="assemblePrompt()" class="w-full bg-teal-600 hover:bg-teal-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-teal-500/20 active:scale-95 transition-all flex justify-center items-center gap-2 relative overflow-hidden group">
-                        <span class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></span>
-                        <i class="ph-bold ph-magic-wand"></i> Generar Prompt
-                    </button>
+                    <button onclick="assemblePrompt()" class="w-full bg-teal-600 hover:bg-teal-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-teal-500/20 active:scale-95 transition-all flex justify-center items-center gap-2 relative overflow-hidden group"><span class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></span><i class="ph-bold ph-magic-wand"></i> Generar Prompt</button>
                 </div>
-
                 <!-- RESULTADO -->
                 <div class="bg-gray-900 text-white p-6 rounded-2xl shadow-2xl border border-gray-700 relative group h-fit">
                     <div class="absolute top-4 right-4 opacity-50 group-hover:opacity-100 transition-opacity">
-                        <button onclick="copyPrompt()" class="bg-white/10 hover:bg-white/20 p-2 rounded-lg text-sm flex items-center gap-2 transition-colors">
-                            <i class="ph-bold ph-copy"></i> Copiar
-                        </button>
+                        <button onclick="copyPrompt()" class="bg-white/10 hover:bg-white/20 p-2 rounded-lg text-sm flex items-center gap-2 transition-colors"><i class="ph-bold ph-copy"></i> Copiar</button>
                     </div>
                     <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Prompt Final</h3>
-                    <div class="bg-black/50 rounded-xl p-4 min-h-[200px] border border-white/5 font-mono text-sm leading-relaxed text-teal-300 shadow-inner" id="prompt-output">
-                        Configura las opciones y escribe tu idea...
+                    <div class="bg-black/50 rounded-xl p-4 min-h-[200px] border border-white/5 font-mono text-sm leading-relaxed text-teal-300 shadow-inner" id="prompt-output">Configura las opciones...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =========================
+         VISTA 4: VISION JSON PROMPT (AJUSTADO)
+         ========================= -->
+    <div id="view-json" class="hidden pt-20 px-4 min-h-screen bg-gray-50 dark:bg-[#0a0a0a]">
+        <div class="max-w-6xl mx-auto pb-24">
+            <header class="mb-10 text-center">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">Vision JsonPrompt</h2>
+                <p class="text-gray-500 dark:text-gray-400">Generador avanzado de guiones y escenas</p>
+            </header>
+
+            <div class="grid lg:grid-cols-5 gap-8">
+                
+                <!-- COLUMNA IZQUIERDA: FORMULARIO (3/5 ancho) -->
+                <div class="lg:col-span-3 space-y-6">
+                    
+                    <!-- 1. ESCENA (AJUSTADO) -->
+                    <div class="bg-white dark:bg-darkcard p-6 rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm">
+                        <h3 class="text-sm font-bold text-amber-500 uppercase tracking-wider mb-4 flex items-center gap-2"><i class="ph-bold ph-film-strip"></i> Escenario</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 mb-1">Lugar / Escena</label>
+                                <input type="text" id="j-scene" placeholder="Ej: Pizzeria, Bosque..." class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-gray-700 rounded-lg p-3 text-sm dark:text-white outline-none focus:border-amber-500 transition-colors">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 mb-1">Estilo General</label>
+                                <!-- SELECTOR ESTÁTICO AGREGADO AQUI -->
+                                <select id="j-style" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-gray-700 rounded-lg p-3 text-sm dark:text-white outline-none focus:border-amber-500 transition-colors">
+                                    <option value="none">none</option>
+                                    <option value="Realista">Realista</option>
+                                    <option value="Pixar">Pixar</option>
+                                    <option value="Animado">Animado</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. CÁMARA (DINÁMICO DESDE ADMIN) -->
+                    <div class="bg-white dark:bg-darkcard p-6 rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm">
+                        <h3 class="text-sm font-bold text-blue-500 uppercase tracking-wider mb-4 flex items-center gap-2"><i class="ph-bold ph-video-camera"></i> Cámara</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 mb-1">Movimiento</label>
+                                <select id="j-cam-mov" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-gray-700 rounded-lg p-3 text-sm dark:text-white outline-none focus:border-blue-500 transition-colors">
+                                    <option value="none">none</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 mb-1">Encuadre</label>
+                                <select id="j-cam-frame" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-gray-700 rounded-lg p-3 text-sm dark:text-white outline-none focus:border-blue-500 transition-colors">
+                                    <option value="none">none</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. PERSONAJES (DINÁMICO) -->
+                    <div class="bg-white dark:bg-darkcard p-6 rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-sm font-bold text-green-500 uppercase tracking-wider flex items-center gap-2"><i class="ph-bold ph-users"></i> Personajes</h3>
+                            <button onclick="addJsonCharacter()" class="text-xs bg-green-500/10 text-green-600 hover:bg-green-500 hover:text-white px-3 py-1 rounded transition-colors border border-green-500/20 font-bold">+ Agregar</button>
+                        </div>
+                        
+                        <div id="json-chars-container" class="space-y-6">
+                            <!-- Se agregan dinámicamente aquí -->
+                        </div>
+                    </div>
+
+                    <button onclick="generateJson()" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-amber-500/20 active:scale-95 transition-all flex justify-center items-center gap-2 text-lg">
+                        <i class="ph-bold ph-code"></i> Generar JSON
+                    </button>
+                </div>
+
+                <!-- SALIDA -->
+                <div class="lg:col-span-2">
+                    <div class="sticky top-24 bg-slate-900 rounded-2xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col h-[600px]">
+                        <div class="bg-slate-950 p-3 border-b border-slate-800 flex justify-between items-center">
+                            <span class="text-xs font-mono text-slate-400">output.json</span>
+                            <button onclick="copyJson()" class="text-xs bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded transition-colors flex items-center gap-1">
+                                <i class="ph-bold ph-copy"></i> Copiar
+                            </button>
+                        </div>
+                        <pre id="json-output" class="flex-1 p-4 overflow-auto font-mono text-xs md:text-sm text-slate-300 leading-relaxed custom-scrollbar bg-slate-900">
+// El código JSON aparecerá aquí...
+                        </pre>
                     </div>
                 </div>
             </div>
@@ -245,6 +297,7 @@
     <!-- JS -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, query, orderBy, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -257,36 +310,39 @@
             measurementId: "G-1BFT6DZEV5"
         };
         const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // --- CONFIG BÁSICA ---
+        signInAnonymously(auth).then(()=>console.log("Auth OK")).catch(console.error);
+
+        // CONFIG BASE
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark');
         window.toggleTheme = () => { document.documentElement.classList.toggle('dark'); localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light'; };
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('sidebar-overlay');
         window.toggleSidebar = () => { sidebar.classList.toggle('-translate-x-full'); overlay.classList.toggle('hidden'); setTimeout(() => overlay.classList.toggle('opacity-0'), 10); };
         
+        // ROUTER
         window.switchView = (viewName) => {
-            ['home', 'gallery', 'vision'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden'));
+            ['home', 'gallery', 'vision', 'json'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden'));
             document.getElementById(`view-${viewName}`).classList.remove('hidden');
             toggleSidebar();
         };
 
-        // --- LÓGICA MULTI-SELECT REPARADA ---
+        // --- LÓGICA MULTI-SELECT (VISION PROMPT) ---
         let selectedSubjects = [];
         let allSubjectsData = [];
 
         window.toggleSubjectDropdown = (event) => {
-            event.stopPropagation(); // Evitar cierre inmediato
+            event.stopPropagation();
             const dd = document.getElementById('subjects-dropdown');
             dd.classList.toggle('hidden');
         };
 
         document.addEventListener('click', (e) => {
             const dd = document.getElementById('subjects-dropdown');
-            const btn = document.getElementById('subjects-text').parentElement; // El div wrapper
-            // Cerrar si clic fuera del dropdown Y fuera del botón
-            if (!dd.classList.contains('hidden') && !dd.contains(e.target) && !btn.contains(e.target)) {
+            const btn = document.getElementById('subjects-text')?.parentElement;
+            if (dd && !dd.classList.contains('hidden') && !dd.contains(e.target) && btn && !btn.contains(e.target)) {
                 dd.classList.add('hidden');
             }
         });
@@ -295,18 +351,14 @@
             const btnText = document.getElementById('subjects-text');
             const tagsContainer = document.getElementById('selected-subjects-tags');
             
-            // Texto botón
             if (selectedSubjects.length === 0) {
                 btnText.innerText = "none";
                 btnText.classList.remove('text-teal-500', 'font-bold');
-                btnText.classList.add('text-gray-500');
             } else {
                 btnText.innerText = `${selectedSubjects.length} seleccionado(s)`;
                 btnText.classList.add('text-teal-500', 'font-bold');
-                btnText.classList.remove('text-gray-500');
             }
 
-            // Etiquetas
             tagsContainer.innerHTML = '';
             selectedSubjects.forEach(subj => {
                 const itemData = allSubjectsData.find(i => i.value === subj);
@@ -317,7 +369,6 @@
                 tagsContainer.appendChild(tag);
             });
 
-            // Checkboxes
             document.querySelectorAll('.subject-checkbox').forEach(cb => {
                 cb.checked = selectedSubjects.includes(cb.value);
             });
@@ -338,62 +389,186 @@
             updateSubjectsUI();
         };
 
-        // --- CARGA DE DATOS ---
-        // 1. Títulos
-        onSnapshot(doc(db, "vision_config", "general"), snap => {
-            if(snap.exists()) {
-                const data = snap.data();
-                document.getElementById('vision-main-title').innerText = data.title || "Vision Prompt";
-                document.getElementById('vision-main-desc').innerText = data.desc || "Ensambla prompts profesionales con IA";
-            }
+        // --- VISION JSON PROMPT LOGIC ---
+        let charCount = 0;
+        let predefinedChars = [];
+        let predefinedVoices = { tones:[], accents:[], langs:[] };
+
+        // Cargar personajes y voces desde Firebase
+        onSnapshot(doc(db, "vision_config", "json_chars"), snap => {
+            if(snap.exists() && snap.data().items) predefinedChars = snap.data().items;
+        });
+        ['json_tones', 'json_accents', 'json_langs'].forEach(cat => {
+            onSnapshot(doc(db, "vision_config", cat), snap => {
+                const key = cat.replace('json_','');
+                if(snap.exists() && snap.data().items) predefinedVoices[key] = snap.data().items;
+            });
         });
 
-        // 2. Listas Simples
-        ['formats', 'styles', 'lighting', 'camera', 'ratios'].forEach(cat => {
+        window.addJsonCharacter = () => {
+            charCount++;
+            const container = document.getElementById('json-chars-container');
+            const div = document.createElement('div');
+            div.id = `char-card-${charCount}`;
+            div.className = "bg-gray-50 dark:bg-black border border-gray-200 dark:border-gray-700 rounded-xl p-5 relative animate-fade-in";
+            
+            let charOptions = '<option value="">-- Seleccionar --</option>';
+            predefinedChars.forEach(c => charOptions += `<option value="${c.label}" data-desc="${c.value}">${c.label}</option>`);
+
+            const getOpts = (list) => {
+                let html = '<option value="none">none</option>';
+                if(list) list.forEach(i => html += `<option value="${i.value}">${i.label}</option>`);
+                return html;
+            };
+
+            div.innerHTML = `
+                <div class="flex justify-between items-center mb-4 border-b border-gray-200 dark:border-gray-800 pb-2">
+                    <h4 class="text-xs font-bold text-green-500 uppercase">Personaje ${charCount}</h4>
+                    <button onclick="removeJsonCharacter(${charCount})" class="text-red-400 hover:text-red-500"><i class="ph-bold ph-trash"></i></button>
+                </div>
+                <div class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 relative">
+                        <div id="char-select-group-${charCount}" class="space-y-1">
+                            <label class="text-[10px] uppercase font-bold text-gray-400">Predefinido</label>
+                            <select class="j-char-select w-full bg-white dark:bg-darkcard border border-gray-300 dark:border-gray-700 rounded p-2 text-sm dark:text-white outline-none focus:border-green-500 transition-colors" onchange="fillCharData(${charCount}, this)">
+                                ${charOptions}
+                            </select>
+                        </div>
+                        <div class="flex items-end pb-2">
+                            <label class="flex items-center cursor-pointer gap-2">
+                                <div class="relative">
+                                    <input type="checkbox" id="custom-toggle-${charCount}" class="sr-only" onchange="toggleCustomChar(${charCount})">
+                                    <div class="block bg-gray-600 w-10 h-6 rounded-full transition-colors toggle-bg"></div>
+                                    <div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition transition-transform"></div>
+                                </div>
+                                <span class="text-xs font-bold text-gray-500 dark:text-gray-400">Custom</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-3 bg-gray-100 dark:bg-[#151515] rounded-lg border border-gray-200 dark:border-gray-800">
+                        <div><label class="text-[10px] uppercase font-bold text-gray-400 block mb-1">Nombre</label><input type="text" id="char-name-${charCount}" class="j-char-name w-full bg-transparent border-b border-gray-300 dark:border-gray-700 text-sm dark:text-gray-300 outline-none focus:border-green-500" placeholder="..." readonly></div>
+                        <div><label class="text-[10px] uppercase font-bold text-gray-400 block mb-1">Descripción</label><input type="text" id="char-desc-${charCount}" class="j-char-desc w-full bg-transparent border-b border-gray-300 dark:border-gray-700 text-sm dark:text-gray-300 outline-none focus:border-green-500" placeholder="..." readonly></div>
+                    </div>
+                    <div><label class="text-[10px] uppercase font-bold text-gray-400 block mb-1">Diálogo</label><textarea class="j-char-dial w-full bg-white dark:bg-darkcard border border-gray-300 dark:border-gray-700 rounded-lg p-3 text-sm dark:text-white outline-none focus:border-green-500 h-20 resize-none" placeholder="Diálogo..."></textarea></div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label class="text-[10px] uppercase font-bold text-gray-400 block mb-1">Tono</label><select class="j-char-tone w-full bg-white dark:bg-darkcard border border-gray-300 dark:border-gray-700 rounded p-2 text-xs dark:text-white outline-none focus:border-green-500">${getOpts(predefinedVoices.tones)}</select></div>
+                        <div><label class="text-[10px] uppercase font-bold text-gray-400 block mb-1">Acento</label><select class="j-char-acc w-full bg-white dark:bg-darkcard border border-gray-300 dark:border-gray-700 rounded p-2 text-xs dark:text-white outline-none focus:border-green-500">${getOpts(predefinedVoices.accents)}</select></div>
+                        <div><label class="text-[10px] uppercase font-bold text-gray-400 block mb-1">Idioma</label><select class="j-char-lang w-full bg-white dark:bg-darkcard border border-gray-300 dark:border-gray-700 rounded p-2 text-xs dark:text-white outline-none focus:border-green-500">${getOpts(predefinedVoices.langs)}</select></div>
+                        <div><label class="text-[10px] uppercase font-bold text-gray-400 block mb-1">Acción</label><input type="text" class="j-char-act w-full bg-white dark:bg-darkcard border border-gray-300 dark:border-gray-700 rounded p-2 text-xs dark:text-white outline-none focus:border-green-500" placeholder="none" value="none"></div>
+                    </div>
+                </div>`;
+            container.appendChild(div);
+        };
+
+        window.removeJsonCharacter = (id) => document.getElementById(`char-card-${id}`).remove();
+        window.fillCharData = (id, select) => {
+            const nameInput = document.getElementById(`char-name-${id}`);
+            const descInput = document.getElementById(`char-desc-${id}`);
+            const selectedOption = select.options[select.selectedIndex];
+            nameInput.value = selectedOption.value;
+            descInput.value = selectedOption.getAttribute('data-desc') || '';
+        };
+        window.toggleCustomChar = (id) => {
+            const isCustom = document.getElementById(`custom-toggle-${id}`).checked;
+            const selectDiv = document.getElementById(`char-select-group-${id}`);
+            const nameInput = document.getElementById(`char-name-${id}`);
+            const descInput = document.getElementById(`char-desc-${id}`);
+            const toggleBg = document.querySelector(`#char-card-${id} .toggle-bg`);
+            const dot = document.querySelector(`#char-card-${id} .dot`);
+            if (isCustom) {
+                selectDiv.classList.add('opacity-30', 'pointer-events-none');
+                nameInput.readOnly = false; descInput.readOnly = false; nameInput.focus();
+                toggleBg.classList.replace('bg-gray-600', 'bg-green-500'); dot.classList.add('translate-x-4');
+            } else {
+                selectDiv.classList.remove('opacity-30', 'pointer-events-none');
+                nameInput.readOnly = true; descInput.readOnly = true;
+                toggleBg.classList.replace('bg-green-500', 'bg-gray-600'); dot.classList.remove('translate-x-4');
+            }
+        };
+
+        window.generateJson = () => {
+            const scene = document.getElementById('j-scene').value;
+            const style = document.getElementById('j-style').value;
+            const camMov = document.getElementById('j-cam-mov').value;
+            const camFrame = document.getElementById('j-cam-frame').value;
+
+            const charCards = document.querySelectorAll('[id^="char-card-"]');
+            const characters = Array.from(charCards).map(card => ({
+                name: card.querySelector('.j-char-name').value,
+                description: card.querySelector('.j-char-desc').value,
+                dialogue: card.querySelector('.j-char-dial').value,
+                voice: {
+                    tone: card.querySelector('.j-char-tone').value,
+                    accent: card.querySelector('.j-char-acc').value,
+                    language: card.querySelector('.j-char-lang').value,
+                    action: card.querySelector('.j-char-act').value
+                }
+            }));
+
+            const finalObj = { scene, characters, camera: { movement: camMov, framing: camFrame }, style };
+            const jsonString = JSON.stringify(finalObj, null, 2);
+            const coloredJson = jsonString.replace(/"(.*?)":/g, '<span class="json-key">"$1":</span>').replace(/: "(.*?)"/g, ': <span class="json-string">"$1"</span>');
+            document.getElementById('json-output').innerHTML = coloredJson;
+        };
+        window.copyJson = () => {
+            const text = document.getElementById('json-output').innerText;
+            const textarea = document.createElement('textarea'); textarea.value = text;
+            document.body.appendChild(textarea); textarea.select();
+            try { document.execCommand('copy'); alert("JSON Copiado"); } catch(e) {}
+            document.body.removeChild(textarea);
+        };
+        
+        setTimeout(() => addJsonCharacter(), 1500);
+
+        // --- VISION PROMPT DINÁMICO (CARGA DE LISTAS) ---
+        const categories = ['formats', 'subjects', 'styles', 'lighting', 'camera', 'ratios'];
+        categories.forEach(cat => {
             onSnapshot(doc(db, "vision_config", cat), snap => {
-                const select = document.getElementById(`p-${cat}`);
-                if(!select) return;
+                const select = document.getElementById(`p-${cat}`); if(!select) return;
                 select.innerHTML = '<option value="">none</option>';
-                if(snap.exists() && snap.data().items) {
-                    snap.data().items.forEach(item => {
-                        const opt = document.createElement('option');
-                        opt.value = item.value; opt.innerText = item.label;
-                        select.appendChild(opt);
-                    });
+                if(snap.exists() && snap.data().items) { snap.data().items.forEach(item => { const opt = document.createElement('option'); opt.value = item.value; opt.innerText = item.label; select.appendChild(opt); }); }
+            });
+        });
+        
+        // Cargar listas para JsonPrompt - SOLO LO QUE NO ES ESTATICO
+        // Hemos dejado json_styles (Estilo General) estatico, asi que lo quitamos de esta lista de carga
+        const jsonCategories = {'json_cam_mov': 'j-cam-mov', 'json_cam_frame': 'j-cam-frame'};
+        Object.keys(jsonCategories).forEach(cat => {
+            onSnapshot(doc(db, "vision_config", cat), snap => {
+                const select = document.getElementById(jsonCategories[cat]); 
+                if(select) {
+                    select.innerHTML = '<option value="none">none</option>';
+                    if(snap.exists() && snap.data().items) { snap.data().items.forEach(i => { const opt = document.createElement('option'); opt.value = i.value; opt.innerText = i.label; select.appendChild(opt); }); }
                 }
             });
         });
 
-        // 3. Cargar Personajes (Multi)
-        onSnapshot(doc(db, "vision_config", "subjects"), snap => {
-            const dropdown = document.getElementById('subjects-dropdown');
-            dropdown.innerHTML = '';
-            
-            if(snap.exists() && snap.data().items) {
-                allSubjectsData = snap.data().items;
-                if(allSubjectsData.length === 0) {
-                    dropdown.innerHTML = '<p class="text-xs text-center text-gray-500 p-2">Lista vacía</p>';
-                }
-                allSubjectsData.forEach(item => {
-                    const label = document.createElement('label');
-                    label.className = "custom-checkbox flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-white/5 cursor-pointer border-b border-gray-100 dark:border-gray-800 last:border-0 transition-colors";
-                    // HTML Checkbox Personalizado
-                    label.innerHTML = `
-                        <span class="text-sm font-medium dark:text-gray-300 select-none">${item.label}</span>
-                        <input type="checkbox" class="subject-checkbox hidden" value="${item.value}" onchange="toggleSubject('${item.value}')">
-                        <div class="w-5 h-5 border-2 border-gray-400 rounded flex items-center justify-center text-white transition-colors">
-                            <i class="ph-bold ph-check text-xs hidden"></i>
-                        </div>
-                    `;
-                    dropdown.appendChild(label);
-                });
-            } else {
-                dropdown.innerHTML = '<p class="text-xs text-center text-gray-500 p-2">Sin opciones.</p>';
+        // TITULOS
+        onSnapshot(doc(db, "vision_config", "general"), snap => {
+            if(snap.exists()) { const d = snap.data(); 
+                const t = document.getElementById('vision-main-title'); if(t) t.innerText = d.title || "Vision Prompt"; 
+                const de = document.getElementById('vision-main-desc'); if(de) de.innerText = d.desc || ""; 
             }
-            updateSubjectsUI();
         });
 
-        // --- ASSEMBLE PROMPT ---
+        // Cargar Sujetos para Multi-Select
+        onSnapshot(doc(db, "vision_config", "subjects"), snap => {
+            const dropdown = document.getElementById('subjects-dropdown');
+            if(dropdown) {
+                dropdown.innerHTML = '';
+                if(snap.exists() && snap.data().items) {
+                    allSubjectsData = snap.data().items;
+                    if(allSubjectsData.length === 0) dropdown.innerHTML = '<p class="text-xs text-center text-gray-500 p-2">Lista vacía</p>';
+                    allSubjectsData.forEach(item => {
+                        const l = document.createElement('label'); l.className = "custom-checkbox flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-white/5 cursor-pointer border-b border-gray-100 dark:border-gray-800 last:border-0 transition-colors";
+                        l.innerHTML = `<span class="text-sm font-medium dark:text-gray-300 select-none">${item.label}</span><input type="checkbox" class="subject-checkbox hidden" value="${item.value}" onchange="toggleSubject('${item.value}')"><div class="w-5 h-5 border-2 border-gray-400 rounded flex items-center justify-center text-white transition-colors"><i class="ph-bold ph-check text-xs hidden"></i></div>`;
+                        dropdown.appendChild(l);
+                    });
+                }
+                updateSubjectsUI();
+            }
+        });
+
         window.assemblePrompt = () => {
             const concept = document.getElementById('p-concept').value.trim();
             const format = document.getElementById('p-formats').value;
@@ -401,90 +576,32 @@
             const lighting = document.getElementById('p-lighting').value;
             const camera = document.getElementById('p-camera').value;
             const ar = document.getElementById('p-ratios').value;
-
-            if(!concept && selectedSubjects.length === 0) return alert("Selecciona personaje o escribe concepto.");
-
-            let parts = [];
-            
-            // 1. Formato
-            if(format) parts.push(format + (selectedSubjects.length > 0 ? " of" : "")); 
-            
-            // 2. Personajes (Con " and " para la IA)
-            if(selectedSubjects.length > 0) {
-                parts.push(selectedSubjects.join(" and ")); // La IA entiende 'and' mejor
-            }
-            
-            // 3. Concepto
-            if(concept) parts.push(concept);
-
-            if(style) parts.push(style);
-            if(lighting) parts.push(lighting);
-            if(camera) parts.push(camera);
-            
-            parts.push("8k resolution, highly detailed, masterpiece");
-            
-            let finalPrompt = parts.join(", ");
-            if(ar) finalPrompt += ` ${ar}`;
-
-            document.getElementById('prompt-output').innerText = finalPrompt;
-
-            const box = document.getElementById('vision-controls-box');
-            box.classList.remove('aurora-active');
-            void box.offsetWidth; 
-            box.classList.add('aurora-active');
-            setTimeout(() => box.classList.remove('aurora-active'), 2000);
+            if(!concept && selectedSubjects.length === 0) return alert("Idea?");
+            let p = [];
+            if(format) p.push(format + (selectedSubjects.length>0?" of":""));
+            if(selectedSubjects.length>0) p.push(selectedSubjects.join(" and "));
+            if(concept) p.push(concept);
+            if(style) p.push(style); if(lighting) p.push(lighting); if(camera) p.push(camera);
+            p.push("8k resolution, highly detailed, masterpiece");
+            let f = p.join(", "); if(ar) f+=` ${ar}`;
+            document.getElementById('prompt-output').innerText = f;
+            const box = document.getElementById('vision-controls-box'); box.classList.remove('aurora-active'); void box.offsetWidth; box.classList.add('aurora-active'); setTimeout(()=>box.classList.remove('aurora-active'),2000);
         };
+        window.copyPrompt = () => { const t = document.getElementById('prompt-output').innerText; const ta = document.createElement('textarea'); ta.value=t; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy'); alert("Copiado");}catch(e){} document.body.removeChild(ta); };
 
-        window.copyPrompt = () => {
-            const text = document.getElementById('prompt-output').innerText;
-            const textarea = document.createElement('textarea');
-            textarea.value = text;
-            document.body.appendChild(textarea);
-            textarea.select();
-            try { document.execCommand('copy'); alert("Copiado!"); } catch (e) { alert("Error"); }
-            document.body.removeChild(textarea);
-        };
-
-        // --- SLOTS, GALERIA, AUDIO (CODIGO EXISTENTE) ---
-        // (Se mantiene intacto el código de carga de slots, galería y audio para que todo funcione junto)
+        // --- SLOTS ---
         const slotContainer = document.getElementById('video-scroll-container');
         for (let i = 1; i <= 5; i++) {
-            const slotId = `slot_${i}`;
-            const slotDiv = document.createElement('div');
-            slotDiv.className = "snap-center flex-shrink-0 relative w-[260px] h-[460px] rounded-3xl overflow-hidden bg-gray-900 border border-white/10 group";
-            slotDiv.id = `render-${slotId}`;
-            slotDiv.innerHTML = `<div class="w-full h-full flex items-center justify-center text-gray-700 font-bold text-3xl opacity-20">${i}</div>`;
-            slotContainer.appendChild(slotDiv);
+            const slotId = `slot_${i}`; const slotDiv = document.createElement('div'); slotDiv.className = "snap-center flex-shrink-0 relative w-[260px] h-[460px] rounded-3xl overflow-hidden bg-gray-900 border border-white/10 group"; slotDiv.id = `render-${slotId}`; slotDiv.innerHTML = `<div class="w-full h-full flex items-center justify-center text-gray-700 font-bold text-3xl opacity-20">${i}</div>`; slotContainer.appendChild(slotDiv);
             onSnapshot(doc(db, "home_slots", slotId), (docSnap) => {
-                const el = document.getElementById(`render-${slotId}`);
-                if (docSnap.exists() && docSnap.data().url) {
-                    const d = docSnap.data();
-                    const isVideo = d.tipo === 'video';
-                    let content = isVideo ? `<video id="vid-${slotId}" src="${d.url}" class="absolute inset-0 w-full h-full object-cover transform scale-105 video-locked" autoplay loop muted playsinline disablePictureInPicture></video>` : `<img src="${d.url}" class="absolute inset-0 w-full h-full object-cover">`;
-                    let btn = isVideo ? `<button onclick="toggleSlotAudio('vid-${slotId}', this)" class="absolute top-4 right-4 z-30 w-10 h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white border border-white/10 active:scale-95"><i class="ph-fill ph-speaker-slash text-lg"></i></button>` : '';
-                    el.innerHTML = `${content}<div class="click-shield"></div><div class="absolute inset-0 z-20 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-90 pointer-events-none"></div><div class="absolute bottom-0 left-0 p-6 text-white z-20 w-full pointer-events-none"><div class="flex items-center gap-2 mb-1"><div class="w-5 h-5 rounded-full bg-gradient-to-tr from-blue-400 to-purple-500 flex items-center justify-center text-[8px] font-bold">G</div><p class="text-xs font-medium text-gray-300 uppercase tracking-wide">${d.autor||'Galaxy'}</p></div><h3 class="text-2xl font-bold leading-none tracking-tight">${d.titulo||'Sin Título'}</h3></div>${btn}`;
-                    attachShieldListeners();
-                } else { el.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-gray-900"><i class="ph-duotone ph-plus text-4xl text-gray-700"></i></div>`; }
+                const el = document.getElementById(`render-${slotId}`); if(docSnap.exists() && docSnap.data().url) { const d = docSnap.data(); const isVideo = d.tipo === 'video'; let content = isVideo ? `<video id="vid-${slotId}" src="${d.url}" class="absolute inset-0 w-full h-full object-cover transform scale-105 video-locked" autoplay loop muted playsinline disablePictureInPicture></video>` : `<img src="${d.url}" class="absolute inset-0 w-full h-full object-cover">`; let btn = isVideo ? `<button onclick="toggleSlotAudio('vid-${slotId}', this)" class="absolute top-4 right-4 z-30 w-10 h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white border border-white/10 active:scale-95"><i class="ph-fill ph-speaker-slash text-lg"></i></button>` : ''; el.innerHTML = `${content}<div class="click-shield"></div><div class="absolute inset-0 z-20 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-90 pointer-events-none"></div><div class="absolute bottom-0 left-0 p-6 text-white z-20 w-full pointer-events-none"><div class="flex items-center gap-2 mb-1"><div class="w-5 h-5 rounded-full bg-gradient-to-tr from-blue-400 to-purple-500 flex items-center justify-center text-[8px] font-bold">G</div><p class="text-xs font-medium text-gray-300 uppercase tracking-wide">${d.autor||'Galaxy'}</p></div><h3 class="text-2xl font-bold leading-none tracking-tight">${d.titulo||'Sin Título'}</h3></div>${btn}`; attachShieldListeners(); }
             });
         }
         function attachShieldListeners() { document.querySelectorAll('.click-shield').forEach(s => { s.addEventListener('contextmenu', e => e.preventDefault()); s.addEventListener('dragstart', e => e.preventDefault()); s.addEventListener('touchstart', e => {}, {passive:false}); }); }
         window.toggleSlotAudio = (vidId, btn) => { const vid = document.getElementById(vidId); const icon = btn.querySelector('i'); if (vid.muted) { vid.muted = false; icon.className = "ph-fill ph-speaker-high text-lg text-blue-400"; btn.classList.add('bg-blue-600/20'); } else { vid.muted = true; icon.className = "ph-fill ph-speaker-slash text-lg"; btn.classList.remove('bg-blue-600/20'); } };
         
         let playlist = []; const audioPlayer = document.getElementById('audio-player'); const vinylRecord = document.getElementById('vinyl-record'); const musicWave = document.getElementById('music-wave'); const musicMenu = document.getElementById('music-menu'); const miniPlayBtn = document.getElementById('mini-play-btn');
-        onSnapshot(query(collection(db, "productos"), orderBy("createdAt", "desc")), (snap) => {
-            const cont = document.getElementById('items-container'); const playCont = document.getElementById('playlist-container'); const widget = document.getElementById('music-widget'); cont.innerHTML = ''; playCont.innerHTML = ''; playlist = [];
-            if(snap.empty) { cont.innerHTML = '<div class="col-span-full text-center text-gray-400 py-10">Vacío</div>'; return; }
-            snap.forEach(doc => {
-                const item = doc.data();
-                if(item.tipo === 'audio') {
-                    playlist.push(item); const d = document.createElement('div'); d.className = "p-2 hover:bg-gray-100 dark:hover:bg-white/10 rounded flex justify-between cursor-pointer border-b border-white/5"; d.innerHTML = `<span class="text-sm font-bold truncate w-40 dark:text-white">${item.titulo}</span> <i class="ph-fill ph-play-circle text-teal-500"></i>`; d.onclick = () => playSong(item.url); playCont.appendChild(d);
-                } else {
-                    let media = item.tipo === 'video' ? `<video controls class="w-full h-48 object-cover bg-black"><source src="${item.url}"></video>` : `<img src="${item.url}" class="w-full h-48 object-cover">`;
-                    const card = document.createElement('div'); card.className = "bg-white dark:bg-darkcard rounded-xl overflow-hidden shadow-sm border border-gray-100 dark:border-white/10"; card.innerHTML = `${media}<div class="p-4"><h3 class="font-bold dark:text-white">${item.titulo}</h3><p class="text-xs text-gray-500">${item.precio||''}</p></div>`; cont.appendChild(card);
-                }
-            });
-            if(playlist.length > 0) widget.classList.remove('hidden'); else widget.classList.add('hidden');
-        });
+        onSnapshot(query(collection(db, "productos"), orderBy("createdAt", "desc")), (snap) => { const cont = document.getElementById('items-container'); const playCont = document.getElementById('playlist-container'); const widget = document.getElementById('music-widget'); cont.innerHTML = ''; playCont.innerHTML = ''; playlist = []; if(snap.empty) { cont.innerHTML = '<div class="col-span-full text-center text-gray-400 py-10">Vacío</div>'; return; } snap.forEach(doc => { const item = doc.data(); if(item.tipo === 'audio') { playlist.push(item); const d = document.createElement('div'); d.className = "p-2 hover:bg-gray-100 dark:hover:bg-white/10 rounded flex justify-between cursor-pointer border-b border-white/5"; d.innerHTML = `<span class="text-sm font-bold truncate w-40 dark:text-white">${item.titulo}</span> <i class="ph-fill ph-play-circle text-teal-500"></i>`; d.onclick = () => playSong(item.url); playCont.appendChild(d); widget.classList.remove('hidden'); } else { let media = item.tipo === 'video' ? `<video controls class="w-full h-48 object-cover bg-black"><source src="${item.url}"></video>` : `<img src="${item.url}" class="w-full h-48 object-cover">`; const card = document.createElement('div'); card.className = "bg-white dark:bg-darkcard rounded-xl overflow-hidden shadow-sm border border-gray-100 dark:border-white/10"; card.innerHTML = `${media}<div class="p-4"><h3 class="font-bold dark:text-white">${item.titulo}</h3><p class="text-xs text-gray-500">${item.precio||''}</p></div>`; cont.appendChild(card); } }); });
         window.toggleMusicMenu = () => { musicMenu.classList.toggle('opacity-0'); musicMenu.classList.toggle('pointer-events-none'); };
         window.playSong = (u) => { audioPlayer.src = u; audioPlayer.play(); updateUI(true); };
         window.togglePlay = () => { if(audioPlayer.paused) { audioPlayer.play(); updateUI(true); } else { audioPlayer.pause(); updateUI(false); } };
