@@ -38,15 +38,13 @@
         }
         .aurora-active { animation: aurora-flash 2s ease-out forwards; position: relative; z-index: 10; }
         
-        /* Estilos para el Multi-Select */
-        .multi-select-dropdown {
-            max-height: 200px;
-            overflow-y: auto;
+        /* Checkbox Personalizado */
+        .custom-checkbox input:checked + div {
+            background-color: #14b8a6; /* teal-500 */
+            border-color: #14b8a6;
         }
-        .checkbox-wrapper:checked + div {
-            background-color: #0d9488;
-            color: white;
-            border-color: #0d9488;
+        .custom-checkbox input:checked + div svg {
+            display: block;
         }
     </style>
 </head>
@@ -155,10 +153,11 @@
             </header>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pb-20">
+                
                 <!-- CONTROLES -->
                 <div id="vision-controls-box" class="bg-white dark:bg-darkcard p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-white/10 space-y-6 transition-all duration-300">
                     <div class="grid grid-cols-2 gap-4">
-                        <!-- FORMATO (Simple) -->
+                        <!-- FORMATO -->
                         <div>
                             <label class="block text-xs font-bold text-teal-600 dark:text-teal-400 mb-1 uppercase tracking-wide">Formato</label>
                             <select id="p-formats" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-gray-700 rounded-lg p-3 text-sm dark:text-white outline-none focus:border-teal-500 transition-colors">
@@ -166,32 +165,29 @@
                             </select>
                         </div>
                         
-                        <!-- MULTI-SELECTOR PERSONAJES (Mejorado) -->
+                        <!-- MULTI-SELECTOR PERSONAJES (REPARADO Y MEJORADO) -->
                         <div class="relative">
                             <label class="block text-xs font-bold text-teal-600 dark:text-teal-400 mb-1 uppercase tracking-wide">Personajes (Max 5)</label>
                             
-                            <!-- Botón que abre el menú -->
-                            <button id="subjects-btn" onclick="toggleSubjectDropdown()" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-gray-700 rounded-lg p-3 text-sm dark:text-white outline-none focus:border-teal-500 transition-colors text-left flex justify-between items-center">
-                                <span id="subjects-text" class="truncate">Seleccionar...</span>
-                                <i class="ph-bold ph-caret-down"></i>
-                            </button>
-
-                            <!-- Dropdown con Checkboxes -->
-                            <div id="subjects-dropdown" class="absolute top-full left-0 w-full mt-2 bg-white dark:bg-black border border-gray-300 dark:border-gray-700 rounded-xl shadow-xl z-50 hidden p-2 multi-select-dropdown">
-                                <!-- Se llena con JS -->
-                                <p class="text-xs text-center text-gray-500 p-2">Cargando...</p>
+                            <!-- Botón Trigger -->
+                            <div onclick="toggleSubjectDropdown(event)" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-gray-700 rounded-lg p-3 text-sm dark:text-white outline-none focus:border-teal-500 transition-colors cursor-pointer flex justify-between items-center select-none">
+                                <span id="subjects-text" class="truncate text-gray-500">Selecciona...</span>
+                                <i class="ph-bold ph-caret-down text-gray-400"></i>
                             </div>
 
-                            <!-- Etiquetas Seleccionadas -->
-                            <div id="selected-subjects-tags" class="flex flex-wrap gap-2 mt-2">
-                                <!-- Tags aquí -->
+                            <!-- Menú Dropdown -->
+                            <div id="subjects-dropdown" class="absolute top-full left-0 w-full mt-2 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 hidden max-h-60 overflow-y-auto animate-fade-in custom-scrollbar">
+                                <p class="text-xs text-center text-gray-500 p-3">Cargando...</p>
                             </div>
+
+                            <!-- Etiquetas (Tags) -->
+                            <div id="selected-subjects-tags" class="flex flex-wrap gap-2 mt-2 min-h-[24px]"></div>
                         </div>
                     </div>
 
                     <div>
                         <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Tu Idea / Concepto</label>
-                        <textarea id="p-concept" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-gray-700 rounded-xl p-4 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none h-24 resize-none" placeholder="Ej: meditando en un jardín zen flotante..."></textarea>
+                        <textarea id="p-concept" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-gray-700 rounded-xl p-4 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none h-24 resize-none" placeholder="Ej: un astronauta meditando en un jardín zen flotante..."></textarea>
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
@@ -263,7 +259,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // CONFIG Y ROUTING
+        // --- CONFIG BÁSICA ---
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark');
         window.toggleTheme = () => { document.documentElement.classList.toggle('dark'); localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light'; };
         const sidebar = document.getElementById('sidebar');
@@ -276,64 +272,54 @@
             toggleSidebar();
         };
 
-        // --- LÓGICA MULTI-SELECT PERSONAJES ---
-        let selectedSubjects = []; // Array para guardar personajes
-        let allSubjectsData = []; // Para guardar datos traídos de FB
+        // --- LÓGICA MULTI-SELECT REPARADA ---
+        let selectedSubjects = [];
+        let allSubjectsData = [];
 
-        window.toggleSubjectDropdown = () => {
-            document.getElementById('subjects-dropdown').classList.toggle('hidden');
+        window.toggleSubjectDropdown = (event) => {
+            event.stopPropagation(); // Evitar cierre inmediato
+            const dd = document.getElementById('subjects-dropdown');
+            dd.classList.toggle('hidden');
         };
 
-        // Cerrar dropdown si click fuera
-        document.addEventListener('click', function(event) {
-            const dropdown = document.getElementById('subjects-dropdown');
-            const btn = document.getElementById('subjects-btn');
-            if (!dropdown.contains(event.target) && !btn.contains(event.target)) {
-                dropdown.classList.add('hidden');
+        document.addEventListener('click', (e) => {
+            const dd = document.getElementById('subjects-dropdown');
+            const btn = document.getElementById('subjects-text').parentElement; // El div wrapper
+            // Cerrar si clic fuera del dropdown Y fuera del botón
+            if (!dd.classList.contains('hidden') && !dd.contains(e.target) && !btn.contains(e.target)) {
+                dd.classList.add('hidden');
             }
         });
 
-        // Función para actualizar la UI de selección
         function updateSubjectsUI() {
             const btnText = document.getElementById('subjects-text');
             const tagsContainer = document.getElementById('selected-subjects-tags');
             
-            // Texto del botón
+            // Texto botón
             if (selectedSubjects.length === 0) {
                 btnText.innerText = "none";
                 btnText.classList.remove('text-teal-500', 'font-bold');
+                btnText.classList.add('text-gray-500');
             } else {
-                btnText.innerText = `${selectedSubjects.length} seleccionados`;
+                btnText.innerText = `${selectedSubjects.length} seleccionado(s)`;
                 btnText.classList.add('text-teal-500', 'font-bold');
+                btnText.classList.remove('text-gray-500');
             }
 
-            // Renderizar etiquetas (chips)
+            // Etiquetas
             tagsContainer.innerHTML = '';
             selectedSubjects.forEach(subj => {
-                // Buscar el label original para mostrarlo bonito
                 const itemData = allSubjectsData.find(i => i.value === subj);
                 const label = itemData ? itemData.label : subj;
-
                 const tag = document.createElement('div');
-                tag.className = "bg-teal-100 dark:bg-teal-900/50 text-teal-700 dark:text-teal-300 text-xs px-3 py-1 rounded-full flex items-center gap-2 border border-teal-200 dark:border-teal-800 animate-fade-in";
-                tag.innerHTML = `
-                    ${label}
-                    <button onclick="removeSubject('${subj}')" class="hover:text-red-500"><i class="ph-bold ph-x"></i></button>
-                `;
+                tag.className = "bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300 text-xs px-3 py-1 rounded-full flex items-center gap-2 border border-teal-200 dark:border-teal-700 animate-fade-in shadow-sm";
+                tag.innerHTML = `${label} <button onclick="removeSubject('${subj}')" class="hover:text-red-500 focus:outline-none"><i class="ph-bold ph-x"></i></button>`;
                 tagsContainer.appendChild(tag);
             });
 
-            // Actualizar estado de checkboxes
+            // Checkboxes
             document.querySelectorAll('.subject-checkbox').forEach(cb => {
                 cb.checked = selectedSubjects.includes(cb.value);
-                // Deshabilitar si ya hay 5 y este no está marcado
-                if (selectedSubjects.length >= 5 && !cb.checked) {
-                    cb.disabled = true;
-                    cb.parentElement.classList.add('opacity-50', 'cursor-not-allowed');
-                } else {
-                    cb.disabled = false;
-                    cb.parentElement.classList.remove('opacity-50', 'cursor-not-allowed');
-                }
             });
         }
 
@@ -352,9 +338,8 @@
             updateSubjectsUI();
         };
 
-        // --- VISION CONFIG & TITULOS ---
-        
-        // 1. Cargar Título General
+        // --- CARGA DE DATOS ---
+        // 1. Títulos
         onSnapshot(doc(db, "vision_config", "general"), snap => {
             if(snap.exists()) {
                 const data = snap.data();
@@ -363,9 +348,8 @@
             }
         });
 
-        // 2. Cargar Listas Simples
-        const simpleCategories = ['formats', 'styles', 'lighting', 'camera', 'ratios'];
-        simpleCategories.forEach(cat => {
+        // 2. Listas Simples
+        ['formats', 'styles', 'lighting', 'camera', 'ratios'].forEach(cat => {
             onSnapshot(doc(db, "vision_config", cat), snap => {
                 const select = document.getElementById(`p-${cat}`);
                 if(!select) return;
@@ -380,54 +364,54 @@
             });
         });
 
-        // 3. Cargar SUJETOS (Especial para Multi-Select)
+        // 3. Cargar Personajes (Multi)
         onSnapshot(doc(db, "vision_config", "subjects"), snap => {
             const dropdown = document.getElementById('subjects-dropdown');
             dropdown.innerHTML = '';
             
             if(snap.exists() && snap.data().items) {
-                allSubjectsData = snap.data().items; // Guardar datos
-                
+                allSubjectsData = snap.data().items;
+                if(allSubjectsData.length === 0) {
+                    dropdown.innerHTML = '<p class="text-xs text-center text-gray-500 p-2">Lista vacía</p>';
+                }
                 allSubjectsData.forEach(item => {
-                    // Crear opción checkbox estilizada
                     const label = document.createElement('label');
-                    label.className = "flex items-center gap-3 p-3 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg cursor-pointer transition-colors";
+                    label.className = "custom-checkbox flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-white/5 cursor-pointer border-b border-gray-100 dark:border-gray-800 last:border-0 transition-colors";
+                    // HTML Checkbox Personalizado
                     label.innerHTML = `
-                        <input type="checkbox" class="subject-checkbox w-4 h-4 accent-teal-500 rounded cursor-pointer" value="${item.value}" onchange="toggleSubject('${item.value}')">
-                        <span class="text-sm font-medium dark:text-gray-200">${item.label}</span>
+                        <span class="text-sm font-medium dark:text-gray-300 select-none">${item.label}</span>
+                        <input type="checkbox" class="subject-checkbox hidden" value="${item.value}" onchange="toggleSubject('${item.value}')">
+                        <div class="w-5 h-5 border-2 border-gray-400 rounded flex items-center justify-center text-white transition-colors">
+                            <i class="ph-bold ph-check text-xs hidden"></i>
+                        </div>
                     `;
                     dropdown.appendChild(label);
                 });
             } else {
-                dropdown.innerHTML = '<p class="text-xs text-gray-500 p-2">Sin opciones.</p>';
+                dropdown.innerHTML = '<p class="text-xs text-center text-gray-500 p-2">Sin opciones.</p>';
             }
-            updateSubjectsUI(); // Refrescar UI por si acaso
+            updateSubjectsUI();
         });
 
-
-        // --- ENSAMBLAR PROMPT ---
+        // --- ASSEMBLE PROMPT ---
         window.assemblePrompt = () => {
             const concept = document.getElementById('p-concept').value.trim();
             const format = document.getElementById('p-formats').value;
-            // Personajes: Array
             const style = document.getElementById('p-styles').value;
             const lighting = document.getElementById('p-lighting').value;
             const camera = document.getElementById('p-camera').value;
             const ar = document.getElementById('p-ratios').value;
 
-            if(!concept && selectedSubjects.length === 0) return alert("Escribe una idea o elige un personaje");
+            if(!concept && selectedSubjects.length === 0) return alert("Selecciona personaje o escribe concepto.");
 
             let parts = [];
             
             // 1. Formato
-            if(format) parts.push(format + (selectedSubjects.length > 0 ? "" : " of")); 
+            if(format) parts.push(format + (selectedSubjects.length > 0 ? " of" : "")); 
             
-            // 2. Personajes (Lógica "y")
-            // Si hay personajes: "Personaje 1 y Personaje 2 y Personaje 3"
+            // 2. Personajes (Con " and " para la IA)
             if(selectedSubjects.length > 0) {
-                // Unir con " y "
-                const charString = selectedSubjects.join(" y ");
-                parts.push(charString);
+                parts.push(selectedSubjects.join(" and ")); // La IA entiende 'and' mejor
             }
             
             // 3. Concepto
@@ -437,7 +421,7 @@
             if(lighting) parts.push(lighting);
             if(camera) parts.push(camera);
             
-            parts.push("8k resolution, highly detailed, masterpiece, trending on artstation");
+            parts.push("8k resolution, highly detailed, masterpiece");
             
             let finalPrompt = parts.join(", ");
             if(ar) finalPrompt += ` ${ar}`;
@@ -457,11 +441,12 @@
             textarea.value = text;
             document.body.appendChild(textarea);
             textarea.select();
-            try { document.execCommand('copy'); alert("Prompt copiado"); } catch (e) { alert("Error copiando"); }
+            try { document.execCommand('copy'); alert("Copiado!"); } catch (e) { alert("Error"); }
             document.body.removeChild(textarea);
         };
 
-        // --- SLOTS, GALERIA, AUDIO (SIN CAMBIOS) ---
+        // --- SLOTS, GALERIA, AUDIO (CODIGO EXISTENTE) ---
+        // (Se mantiene intacto el código de carga de slots, galería y audio para que todo funcione junto)
         const slotContainer = document.getElementById('video-scroll-container');
         for (let i = 1; i <= 5; i++) {
             const slotId = `slot_${i}`;
@@ -470,71 +455,36 @@
             slotDiv.id = `render-${slotId}`;
             slotDiv.innerHTML = `<div class="w-full h-full flex items-center justify-center text-gray-700 font-bold text-3xl opacity-20">${i}</div>`;
             slotContainer.appendChild(slotDiv);
-
             onSnapshot(doc(db, "home_slots", slotId), (docSnap) => {
                 const el = document.getElementById(`render-${slotId}`);
                 if (docSnap.exists() && docSnap.data().url) {
                     const d = docSnap.data();
                     const isVideo = d.tipo === 'video';
-                    let content = isVideo 
-                        ? `<video id="vid-${slotId}" src="${d.url}" class="absolute inset-0 w-full h-full object-cover transform scale-105 video-locked" autoplay loop muted playsinline disablePictureInPicture></video>`
-                        : `<img src="${d.url}" class="absolute inset-0 w-full h-full object-cover">`;
-                    let btn = isVideo 
-                        ? `<button onclick="toggleSlotAudio('vid-${slotId}', this)" class="absolute top-4 right-4 z-30 w-10 h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white border border-white/10 active:scale-95"><i class="ph-fill ph-speaker-slash text-lg"></i></button>` : '';
+                    let content = isVideo ? `<video id="vid-${slotId}" src="${d.url}" class="absolute inset-0 w-full h-full object-cover transform scale-105 video-locked" autoplay loop muted playsinline disablePictureInPicture></video>` : `<img src="${d.url}" class="absolute inset-0 w-full h-full object-cover">`;
+                    let btn = isVideo ? `<button onclick="toggleSlotAudio('vid-${slotId}', this)" class="absolute top-4 right-4 z-30 w-10 h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white border border-white/10 active:scale-95"><i class="ph-fill ph-speaker-slash text-lg"></i></button>` : '';
                     el.innerHTML = `${content}<div class="click-shield"></div><div class="absolute inset-0 z-20 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-90 pointer-events-none"></div><div class="absolute bottom-0 left-0 p-6 text-white z-20 w-full pointer-events-none"><div class="flex items-center gap-2 mb-1"><div class="w-5 h-5 rounded-full bg-gradient-to-tr from-blue-400 to-purple-500 flex items-center justify-center text-[8px] font-bold">G</div><p class="text-xs font-medium text-gray-300 uppercase tracking-wide">${d.autor||'Galaxy'}</p></div><h3 class="text-2xl font-bold leading-none tracking-tight">${d.titulo||'Sin Título'}</h3></div>${btn}`;
                     attachShieldListeners();
                 } else { el.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-gray-900"><i class="ph-duotone ph-plus text-4xl text-gray-700"></i></div>`; }
             });
         }
-
-        function attachShieldListeners() {
-            document.querySelectorAll('.click-shield').forEach(s => {
-                s.addEventListener('contextmenu', e => e.preventDefault());
-                s.addEventListener('dragstart', e => e.preventDefault());
-                s.addEventListener('touchstart', e => {}, {passive:false});
-            });
-        }
-
-        window.toggleSlotAudio = (vidId, btn) => {
-            const vid = document.getElementById(vidId);
-            const icon = btn.querySelector('i');
-            if (vid.muted) { vid.muted = false; icon.className = "ph-fill ph-speaker-high text-lg text-blue-400"; btn.classList.add('bg-blue-600/20'); } 
-            else { vid.muted = true; icon.className = "ph-fill ph-speaker-slash text-lg"; btn.classList.remove('bg-blue-600/20'); }
-        };
-
-        let playlist = [];
-        const audioPlayer = document.getElementById('audio-player');
-        const vinylRecord = document.getElementById('vinyl-record');
-        const musicWave = document.getElementById('music-wave');
-        const musicMenu = document.getElementById('music-menu');
-        const miniPlayBtn = document.getElementById('mini-play-btn');
-
+        function attachShieldListeners() { document.querySelectorAll('.click-shield').forEach(s => { s.addEventListener('contextmenu', e => e.preventDefault()); s.addEventListener('dragstart', e => e.preventDefault()); s.addEventListener('touchstart', e => {}, {passive:false}); }); }
+        window.toggleSlotAudio = (vidId, btn) => { const vid = document.getElementById(vidId); const icon = btn.querySelector('i'); if (vid.muted) { vid.muted = false; icon.className = "ph-fill ph-speaker-high text-lg text-blue-400"; btn.classList.add('bg-blue-600/20'); } else { vid.muted = true; icon.className = "ph-fill ph-speaker-slash text-lg"; btn.classList.remove('bg-blue-600/20'); } };
+        
+        let playlist = []; const audioPlayer = document.getElementById('audio-player'); const vinylRecord = document.getElementById('vinyl-record'); const musicWave = document.getElementById('music-wave'); const musicMenu = document.getElementById('music-menu'); const miniPlayBtn = document.getElementById('mini-play-btn');
         onSnapshot(query(collection(db, "productos"), orderBy("createdAt", "desc")), (snap) => {
-            const cont = document.getElementById('items-container');
-            const playCont = document.getElementById('playlist-container');
-            const widget = document.getElementById('music-widget');
-            cont.innerHTML = ''; playCont.innerHTML = ''; playlist = [];
+            const cont = document.getElementById('items-container'); const playCont = document.getElementById('playlist-container'); const widget = document.getElementById('music-widget'); cont.innerHTML = ''; playCont.innerHTML = ''; playlist = [];
             if(snap.empty) { cont.innerHTML = '<div class="col-span-full text-center text-gray-400 py-10">Vacío</div>'; return; }
             snap.forEach(doc => {
                 const item = doc.data();
                 if(item.tipo === 'audio') {
-                    playlist.push(item);
-                    const d = document.createElement('div');
-                    d.className = "p-2 hover:bg-gray-100 dark:hover:bg-white/10 rounded flex justify-between cursor-pointer border-b border-white/5";
-                    d.innerHTML = `<span class="text-sm font-bold truncate w-40 dark:text-white">${item.titulo}</span> <i class="ph-fill ph-play-circle text-teal-500"></i>`;
-                    d.onclick = () => playSong(item.url);
-                    playCont.appendChild(d);
+                    playlist.push(item); const d = document.createElement('div'); d.className = "p-2 hover:bg-gray-100 dark:hover:bg-white/10 rounded flex justify-between cursor-pointer border-b border-white/5"; d.innerHTML = `<span class="text-sm font-bold truncate w-40 dark:text-white">${item.titulo}</span> <i class="ph-fill ph-play-circle text-teal-500"></i>`; d.onclick = () => playSong(item.url); playCont.appendChild(d);
                 } else {
                     let media = item.tipo === 'video' ? `<video controls class="w-full h-48 object-cover bg-black"><source src="${item.url}"></video>` : `<img src="${item.url}" class="w-full h-48 object-cover">`;
-                    const card = document.createElement('div');
-                    card.className = "bg-white dark:bg-darkcard rounded-xl overflow-hidden shadow-sm border border-gray-100 dark:border-white/10";
-                    card.innerHTML = `${media}<div class="p-4"><h3 class="font-bold dark:text-white">${item.titulo}</h3><p class="text-xs text-gray-500">${item.precio||''}</p></div>`;
-                    cont.appendChild(card);
+                    const card = document.createElement('div'); card.className = "bg-white dark:bg-darkcard rounded-xl overflow-hidden shadow-sm border border-gray-100 dark:border-white/10"; card.innerHTML = `${media}<div class="p-4"><h3 class="font-bold dark:text-white">${item.titulo}</h3><p class="text-xs text-gray-500">${item.precio||''}</p></div>`; cont.appendChild(card);
                 }
             });
             if(playlist.length > 0) widget.classList.remove('hidden'); else widget.classList.add('hidden');
         });
-
         window.toggleMusicMenu = () => { musicMenu.classList.toggle('opacity-0'); musicMenu.classList.toggle('pointer-events-none'); };
         window.playSong = (u) => { audioPlayer.src = u; audioPlayer.play(); updateUI(true); };
         window.togglePlay = () => { if(audioPlayer.paused) { audioPlayer.play(); updateUI(true); } else { audioPlayer.pause(); updateUI(false); } };
