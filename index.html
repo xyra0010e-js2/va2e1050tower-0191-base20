@@ -135,12 +135,12 @@
         </div>
     </div>
 
-    <!-- VISTA 3: VISION PROMPT DINÁMICO -->
     <div id="view-vision" class="hidden pt-20 px-4 min-h-screen bg-gray-50 dark:bg-[#0a0a0a]">
         <div class="max-w-6xl mx-auto">
             <header class="mb-10 text-center">
-                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">Vision Prompt</h2>
-                <p class="text-gray-500 dark:text-gray-400">Ensambla prompts profesionales con IA</p>
+                <!-- TITULOS DINÁMICOS AQUÍ -->
+                <h2 id="vision-main-title" class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">Vision Prompt</h2>
+                <p id="vision-main-desc" class="text-gray-500 dark:text-gray-400">Ensambla prompts profesionales con IA</p>
             </header>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pb-20">
@@ -150,13 +150,13 @@
                         <div>
                             <label class="block text-xs font-bold text-teal-600 dark:text-teal-400 mb-1 uppercase tracking-wide">Formato</label>
                             <select id="p-formats" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-gray-700 rounded-lg p-3 text-sm dark:text-white outline-none focus:border-teal-500 transition-colors">
-                                <option value="">(Libre)</option>
+                                <option value="">none</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-teal-600 dark:text-teal-400 mb-1 uppercase tracking-wide">Sujeto / Plano</label>
+                            <label class="block text-xs font-bold text-teal-600 dark:text-teal-400 mb-1 uppercase tracking-wide">Personaje</label>
                             <select id="p-subjects" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-gray-700 rounded-lg p-3 text-sm dark:text-white outline-none focus:border-teal-500 transition-colors">
-                                <option value="">(Libre)</option>
+                                <option value="">none</option>
                             </select>
                         </div>
                     </div>
@@ -170,13 +170,13 @@
                         <div>
                             <label class="block text-xs font-bold text-gray-500 mb-1">Estilo Visual</label>
                             <select id="p-styles" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-gray-700 rounded-lg p-3 text-sm dark:text-white outline-none">
-                                <option value="">(Ninguno)</option>
+                                <option value="">none</option>
                             </select>
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-gray-500 mb-1">Iluminación</label>
                             <select id="p-lighting" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-gray-700 rounded-lg p-3 text-sm dark:text-white outline-none">
-                                <option value="">(Normal)</option>
+                                <option value="">none</option>
                             </select>
                         </div>
                     </div>
@@ -185,13 +185,13 @@
                         <div>
                             <label class="block text-xs font-bold text-gray-500 mb-1">Cámara</label>
                             <select id="p-camera" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-gray-700 rounded-lg p-3 text-sm dark:text-white outline-none">
-                                <option value="">(Normal)</option>
+                                <option value="">none</option>
                             </select>
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-gray-500 mb-1">Aspecto</label>
                             <select id="p-ratios" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-gray-700 rounded-lg p-3 text-sm dark:text-white outline-none">
-                                <option value="">(Normal)</option>
+                                <option value="">none</option>
                             </select>
                         </div>
                     </div>
@@ -248,6 +248,17 @@
         };
 
         // --- VISION PROMPT DINÁMICO ---
+        
+        // 1. Cargar Título General
+        onSnapshot(doc(db, "vision_config", "general"), snap => {
+            if(snap.exists()) {
+                const data = snap.data();
+                document.getElementById('vision-main-title').innerText = data.title || "Vision Prompt";
+                document.getElementById('vision-main-desc').innerText = data.desc || "Ensambla prompts profesionales con IA";
+            }
+        });
+
+        // 2. Cargar Listas
         const categories = ['formats', 'subjects', 'styles', 'lighting', 'camera', 'ratios'];
         
         categories.forEach(cat => {
@@ -255,8 +266,7 @@
                 const select = document.getElementById(`p-${cat}`);
                 if(!select) return;
                 
-                // Mantener opción default
-                select.innerHTML = '<option value="">(Libre / Normal)</option>';
+                select.innerHTML = '<option value="">none</option>'; // Default cambiado
                 
                 if(snap.exists() && snap.data().items) {
                     snap.data().items.forEach(item => {
@@ -294,7 +304,6 @@
 
             document.getElementById('prompt-output').innerText = finalPrompt;
 
-            // Aurora Effect
             const box = document.getElementById('vision-controls-box');
             box.classList.remove('aurora-active');
             void box.offsetWidth; 
