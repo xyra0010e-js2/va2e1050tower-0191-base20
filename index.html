@@ -37,6 +37,17 @@
             100% { box-shadow: 0 0 0 0 rgba(0,0,0,0); border-color: rgba(255,255,255,0.1); }
         }
         .aurora-active { animation: aurora-flash 2s ease-out forwards; position: relative; z-index: 10; }
+        
+        /* Estilos para el Multi-Select */
+        .multi-select-dropdown {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .checkbox-wrapper:checked + div {
+            background-color: #0d9488;
+            color: white;
+            border-color: #0d9488;
+        }
     </style>
 </head>
 <body class="bg-white dark:bg-darkbg text-gray-800 dark:text-white min-h-screen relative overflow-x-hidden select-none" oncontextmenu="return false">
@@ -135,10 +146,10 @@
         </div>
     </div>
 
+    <!-- VISTA VISION PROMPT -->
     <div id="view-vision" class="hidden pt-20 px-4 min-h-screen bg-gray-50 dark:bg-[#0a0a0a]">
         <div class="max-w-6xl mx-auto">
             <header class="mb-10 text-center">
-                <!-- TITULOS DINÁMICOS AQUÍ -->
                 <h2 id="vision-main-title" class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">Vision Prompt</h2>
                 <p id="vision-main-desc" class="text-gray-500 dark:text-gray-400">Ensambla prompts profesionales con IA</p>
             </header>
@@ -147,23 +158,40 @@
                 <!-- CONTROLES -->
                 <div id="vision-controls-box" class="bg-white dark:bg-darkcard p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-white/10 space-y-6 transition-all duration-300">
                     <div class="grid grid-cols-2 gap-4">
+                        <!-- FORMATO (Simple) -->
                         <div>
                             <label class="block text-xs font-bold text-teal-600 dark:text-teal-400 mb-1 uppercase tracking-wide">Formato</label>
                             <select id="p-formats" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-gray-700 rounded-lg p-3 text-sm dark:text-white outline-none focus:border-teal-500 transition-colors">
                                 <option value="">none</option>
                             </select>
                         </div>
-                        <div>
-                            <label class="block text-xs font-bold text-teal-600 dark:text-teal-400 mb-1 uppercase tracking-wide">Personaje</label>
-                            <select id="p-subjects" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-gray-700 rounded-lg p-3 text-sm dark:text-white outline-none focus:border-teal-500 transition-colors">
-                                <option value="">none</option>
-                            </select>
+                        
+                        <!-- MULTI-SELECTOR PERSONAJES (Mejorado) -->
+                        <div class="relative">
+                            <label class="block text-xs font-bold text-teal-600 dark:text-teal-400 mb-1 uppercase tracking-wide">Personajes (Max 5)</label>
+                            
+                            <!-- Botón que abre el menú -->
+                            <button id="subjects-btn" onclick="toggleSubjectDropdown()" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-gray-700 rounded-lg p-3 text-sm dark:text-white outline-none focus:border-teal-500 transition-colors text-left flex justify-between items-center">
+                                <span id="subjects-text" class="truncate">Seleccionar...</span>
+                                <i class="ph-bold ph-caret-down"></i>
+                            </button>
+
+                            <!-- Dropdown con Checkboxes -->
+                            <div id="subjects-dropdown" class="absolute top-full left-0 w-full mt-2 bg-white dark:bg-black border border-gray-300 dark:border-gray-700 rounded-xl shadow-xl z-50 hidden p-2 multi-select-dropdown">
+                                <!-- Se llena con JS -->
+                                <p class="text-xs text-center text-gray-500 p-2">Cargando...</p>
+                            </div>
+
+                            <!-- Etiquetas Seleccionadas -->
+                            <div id="selected-subjects-tags" class="flex flex-wrap gap-2 mt-2">
+                                <!-- Tags aquí -->
+                            </div>
                         </div>
                     </div>
 
                     <div>
                         <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Tu Idea / Concepto</label>
-                        <textarea id="p-concept" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-gray-700 rounded-xl p-4 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none h-24 resize-none" placeholder="Ej: un astronauta meditando en un jardín zen flotante..."></textarea>
+                        <textarea id="p-concept" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-gray-700 rounded-xl p-4 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none h-24 resize-none" placeholder="Ej: meditando en un jardín zen flotante..."></textarea>
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
@@ -235,6 +263,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // CONFIG Y ROUTING
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark');
         window.toggleTheme = () => { document.documentElement.classList.toggle('dark'); localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light'; };
         const sidebar = document.getElementById('sidebar');
@@ -247,7 +276,83 @@
             toggleSidebar();
         };
 
-        // --- VISION PROMPT DINÁMICO ---
+        // --- LÓGICA MULTI-SELECT PERSONAJES ---
+        let selectedSubjects = []; // Array para guardar personajes
+        let allSubjectsData = []; // Para guardar datos traídos de FB
+
+        window.toggleSubjectDropdown = () => {
+            document.getElementById('subjects-dropdown').classList.toggle('hidden');
+        };
+
+        // Cerrar dropdown si click fuera
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('subjects-dropdown');
+            const btn = document.getElementById('subjects-btn');
+            if (!dropdown.contains(event.target) && !btn.contains(event.target)) {
+                dropdown.classList.add('hidden');
+            }
+        });
+
+        // Función para actualizar la UI de selección
+        function updateSubjectsUI() {
+            const btnText = document.getElementById('subjects-text');
+            const tagsContainer = document.getElementById('selected-subjects-tags');
+            
+            // Texto del botón
+            if (selectedSubjects.length === 0) {
+                btnText.innerText = "none";
+                btnText.classList.remove('text-teal-500', 'font-bold');
+            } else {
+                btnText.innerText = `${selectedSubjects.length} seleccionados`;
+                btnText.classList.add('text-teal-500', 'font-bold');
+            }
+
+            // Renderizar etiquetas (chips)
+            tagsContainer.innerHTML = '';
+            selectedSubjects.forEach(subj => {
+                // Buscar el label original para mostrarlo bonito
+                const itemData = allSubjectsData.find(i => i.value === subj);
+                const label = itemData ? itemData.label : subj;
+
+                const tag = document.createElement('div');
+                tag.className = "bg-teal-100 dark:bg-teal-900/50 text-teal-700 dark:text-teal-300 text-xs px-3 py-1 rounded-full flex items-center gap-2 border border-teal-200 dark:border-teal-800 animate-fade-in";
+                tag.innerHTML = `
+                    ${label}
+                    <button onclick="removeSubject('${subj}')" class="hover:text-red-500"><i class="ph-bold ph-x"></i></button>
+                `;
+                tagsContainer.appendChild(tag);
+            });
+
+            // Actualizar estado de checkboxes
+            document.querySelectorAll('.subject-checkbox').forEach(cb => {
+                cb.checked = selectedSubjects.includes(cb.value);
+                // Deshabilitar si ya hay 5 y este no está marcado
+                if (selectedSubjects.length >= 5 && !cb.checked) {
+                    cb.disabled = true;
+                    cb.parentElement.classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                    cb.disabled = false;
+                    cb.parentElement.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            });
+        }
+
+        window.toggleSubject = (value) => {
+            if (selectedSubjects.includes(value)) {
+                selectedSubjects = selectedSubjects.filter(s => s !== value);
+            } else {
+                if (selectedSubjects.length >= 5) return alert("Máximo 5 personajes.");
+                selectedSubjects.push(value);
+            }
+            updateSubjectsUI();
+        };
+
+        window.removeSubject = (value) => {
+            selectedSubjects = selectedSubjects.filter(s => s !== value);
+            updateSubjectsUI();
+        };
+
+        // --- VISION CONFIG & TITULOS ---
         
         // 1. Cargar Título General
         onSnapshot(doc(db, "vision_config", "general"), snap => {
@@ -258,45 +363,80 @@
             }
         });
 
-        // 2. Cargar Listas
-        const categories = ['formats', 'subjects', 'styles', 'lighting', 'camera', 'ratios'];
-        
-        categories.forEach(cat => {
+        // 2. Cargar Listas Simples
+        const simpleCategories = ['formats', 'styles', 'lighting', 'camera', 'ratios'];
+        simpleCategories.forEach(cat => {
             onSnapshot(doc(db, "vision_config", cat), snap => {
                 const select = document.getElementById(`p-${cat}`);
                 if(!select) return;
-                
-                select.innerHTML = '<option value="">none</option>'; // Default cambiado
-                
+                select.innerHTML = '<option value="">none</option>';
                 if(snap.exists() && snap.data().items) {
                     snap.data().items.forEach(item => {
                         const opt = document.createElement('option');
-                        opt.value = item.value;
-                        opt.innerText = item.label;
+                        opt.value = item.value; opt.innerText = item.label;
                         select.appendChild(opt);
                     });
                 }
             });
         });
 
+        // 3. Cargar SUJETOS (Especial para Multi-Select)
+        onSnapshot(doc(db, "vision_config", "subjects"), snap => {
+            const dropdown = document.getElementById('subjects-dropdown');
+            dropdown.innerHTML = '';
+            
+            if(snap.exists() && snap.data().items) {
+                allSubjectsData = snap.data().items; // Guardar datos
+                
+                allSubjectsData.forEach(item => {
+                    // Crear opción checkbox estilizada
+                    const label = document.createElement('label');
+                    label.className = "flex items-center gap-3 p-3 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg cursor-pointer transition-colors";
+                    label.innerHTML = `
+                        <input type="checkbox" class="subject-checkbox w-4 h-4 accent-teal-500 rounded cursor-pointer" value="${item.value}" onchange="toggleSubject('${item.value}')">
+                        <span class="text-sm font-medium dark:text-gray-200">${item.label}</span>
+                    `;
+                    dropdown.appendChild(label);
+                });
+            } else {
+                dropdown.innerHTML = '<p class="text-xs text-gray-500 p-2">Sin opciones.</p>';
+            }
+            updateSubjectsUI(); // Refrescar UI por si acaso
+        });
+
+
+        // --- ENSAMBLAR PROMPT ---
         window.assemblePrompt = () => {
             const concept = document.getElementById('p-concept').value.trim();
             const format = document.getElementById('p-formats').value;
-            const subject = document.getElementById('p-subjects').value;
+            // Personajes: Array
             const style = document.getElementById('p-styles').value;
             const lighting = document.getElementById('p-lighting').value;
             const camera = document.getElementById('p-camera').value;
             const ar = document.getElementById('p-ratios').value;
 
-            if(!concept) return alert("Escribe tu idea principal!");
+            if(!concept && selectedSubjects.length === 0) return alert("Escribe una idea o elige un personaje");
 
             let parts = [];
-            if(format) parts.push(format + (subject ? "" : " of")); 
-            if(subject) parts.push(subject);
-            parts.push(concept);
+            
+            // 1. Formato
+            if(format) parts.push(format + (selectedSubjects.length > 0 ? "" : " of")); 
+            
+            // 2. Personajes (Lógica "y")
+            // Si hay personajes: "Personaje 1 y Personaje 2 y Personaje 3"
+            if(selectedSubjects.length > 0) {
+                // Unir con " y "
+                const charString = selectedSubjects.join(" y ");
+                parts.push(charString);
+            }
+            
+            // 3. Concepto
+            if(concept) parts.push(concept);
+
             if(style) parts.push(style);
             if(lighting) parts.push(lighting);
             if(camera) parts.push(camera);
+            
             parts.push("8k resolution, highly detailed, masterpiece, trending on artstation");
             
             let finalPrompt = parts.join(", ");
@@ -321,7 +461,7 @@
             document.body.removeChild(textarea);
         };
 
-        // --- SLOTS (Igual que antes) ---
+        // --- SLOTS, GALERIA, AUDIO (SIN CAMBIOS) ---
         const slotContainer = document.getElementById('video-scroll-container');
         for (let i = 1; i <= 5; i++) {
             const slotId = `slot_${i}`;
@@ -362,7 +502,6 @@
             else { vid.muted = true; icon.className = "ph-fill ph-speaker-slash text-lg"; btn.classList.remove('bg-blue-600/20'); }
         };
 
-        // --- GALERÍA & MÚSICA ---
         let playlist = [];
         const audioPlayer = document.getElementById('audio-player');
         const vinylRecord = document.getElementById('vinyl-record');
