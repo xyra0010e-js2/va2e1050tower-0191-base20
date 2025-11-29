@@ -172,11 +172,16 @@
                 <span class="font-medium group-hover:translate-x-1 transition-transform">Galería</span>
             </button>
             
+            <!-- NUEVO: Botón Guía -->
+            <button onclick="switchView('guide')" class="w-full text-left p-3 rounded-xl flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-white/5 text-gray-600 dark:text-gray-300 transition-all group border border-transparent hover:border-gray-200 dark:hover:border-white/5">
+                <div class="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform"><i class="ph-fill ph-book-open text-lg"></i></div>
+                <span class="font-medium group-hover:translate-x-1 transition-transform">Guía de Modelos</span>
+            </button>
+            
             <div class="h-px bg-gray-200 dark:bg-white/10 my-4 mx-3"></div>
             
             <div class="text-xs font-bold text-gray-400 uppercase tracking-widest px-3 mb-2">Herramientas AI</div>
             
-            <!-- NUEVO BOTÓN AGREGADO -->
             <button onclick="switchView('eraser')" class="w-full text-left p-3 rounded-xl flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-white/5 text-gray-600 dark:text-gray-300 transition-all group border border-transparent hover:border-gray-200 dark:hover:border-white/5">
                 <div class="w-8 h-8 rounded-lg bg-red-100 dark:bg-red-500/20 flex items-center justify-center text-red-600 dark:text-red-400 group-hover:scale-110 transition-transform"><i class="ph-fill ph-eraser text-lg"></i></div>
                 <span class="font-medium group-hover:translate-x-1 transition-transform">Borrador Mágico</span>
@@ -281,8 +286,12 @@
         </div>
     </div>
 
-    <!-- NUEVA VISTA INTEGRADA: BORRADOR DE OBJETOS -->
-    <!-- Hemos creado un contenedor especial que ocupa toda la pantalla disponible -->
+    <!-- NUEVA VISTA INTEGRADA: GUIA DE MODELOS -->
+    <div id="view-guide" class="hidden pt-16 min-h-screen w-full bg-[#050505] relative z-10 flex flex-col">
+        <iframe src="guia.html" class="flex-1 w-full border-none h-[calc(100vh-64px)]" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>
+    </div>
+
+    <!-- VISTA: BORRADOR DE OBJETOS -->
     <div id="view-eraser" class="hidden pt-16 h-screen w-full bg-black relative z-10 flex flex-col">
         <iframe src="borrador.html" class="flex-1 w-full border-none" allow="camera; photos"></iframe>
     </div>
@@ -482,13 +491,16 @@
             else { overlay.classList.remove('hidden'); void overlay.offsetWidth; overlay.classList.add('opacity-100'); sidebar.classList.remove('-translate-x-full'); }
         };
         
-        // MODIFICADO: Agregada la vista 'eraser'
+        // MODIFICADO: Agregada la vista 'eraser' y 'guide'
         window.switchView = (viewName) => {
-            ['home', 'gallery', 'vision', 'json', 'eraser'].forEach(v => { document.getElementById(`view-${v}`).classList.add('hidden'); document.getElementById(`view-${v}`).classList.remove('animate-fade-in'); });
+            ['home', 'gallery', 'vision', 'json', 'eraser', 'guide'].forEach(v => { document.getElementById(`view-${v}`).classList.add('hidden'); document.getElementById(`view-${v}`).classList.remove('animate-fade-in'); });
             const target = document.getElementById(`view-${viewName}`); target.classList.remove('hidden'); void target.offsetWidth; target.classList.add('animate-fade-in');
             if(window.innerWidth < 1024) toggleSidebar();
         };
 
+        // ... (RESTO DEL CÓDIGO JS SE MANTIENE IGUAL QUE ANTES) ...
+        // ... (Simplemente asegúrate de que todo el JS de Vision/Json del index anterior esté aquí) ...
+        
         let selectedSubjects = [];
         let allSubjectsData = [];
         window.toggleSubjectDropdown = (event) => { event.stopPropagation(); document.getElementById('subjects-dropdown').classList.toggle('hidden'); };
@@ -739,5 +751,4 @@
         function upUI(playing){ if(playing){ vr.classList.remove('spin-paused'); }else{ vr.classList.add('spin-paused'); } }
     </script>
 </body>
-</html>
-
+    </html>
