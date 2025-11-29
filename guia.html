@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Vision AI Guide</title>
+    
+    <!-- React & Tailwind -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Iconos & Fuente Inter (Igual que Index) -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body { 
+            background-color: #050505; /* Mismo fondo que index */
+            color: #e2e8f0; 
+            font-family: 'Inter', sans-serif; /* Misma fuente */
+            overflow-x: hidden;
+            perspective: 1000px;
+        }
+
+        /* --- 3D STAGE & ANIMATIONS --- */
+        .stage-3d { transform-style: preserve-3d; perspective: 1200px; }
+
+        .neural-prism {
+            background: rgba(255, 255, 255, 0.03); /* Glass más sutil */
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 0 30px rgba(255,255,255,0.02);
+            transform: rotateX(10deg);
+        }
+
+        /* Animaciones SVG (Mantenidas) */
+        @keyframes aurora-flow {
+            0% { background-position: 0% 50%; opacity: 0.5; transform: scale(0.8); }
+            50% { background-position: 100% 50%; opacity: 1; transform: scale(1.2); }
+            100% { background-position: 0% 50%; opacity: 0.5; transform: scale(0.8); }
+        }
+        .aurora-burst { filter: blur(30px); background-size: 200% 200%; animation: aurora-flow 4s ease-in-out infinite; mix-blend-mode: screen; }
+
+        @keyframes input-flow {
+            0% { transform: translateY(-120px) scale(0.9) rotateX(10deg); opacity: 0; }
+            20% { transform: translateY(-80px) scale(1) rotateX(0deg); opacity: 1; }
+            50% { transform: translateY(0px) scale(0.8) rotateX(-20deg); opacity: 0; }
+            100% { transform: translateY(0px) scale(0.8); opacity: 0; }
+        }
+        .flow-input { animation: input-flow 4s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+
+        @keyframes output-flow {
+            0% { transform: translateY(0px) scale(0.8) rotateX(20deg); opacity: 0; }
+            40% { transform: translateY(0px) scale(0.8); opacity: 0; }
+            60% { transform: translateY(40px) scale(0.9) rotateX(10deg); opacity: 1; }
+            90% { transform: translateY(80px) scale(1) rotateX(0deg); opacity: 1; }
+            100% { transform: translateY(100px) scale(1.05); opacity: 0; }
+        }
+        .flow-output { animation: output-flow 4s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+
+        @keyframes laser-scan {
+            0% { height: 0; opacity: 0; }
+            30% { height: 100%; opacity: 1; }
+            60% { height: 0; top: 100%; opacity: 0; }
+            100% { height: 0; opacity: 0; }
+        }
+        .laser-beam { background: linear-gradient(to bottom, transparent, currentColor, transparent); animation: laser-scan 4s ease-in-out infinite; }
+
+        @keyframes float-ui {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+        .float-slow { animation: float-ui 7s ease-in-out infinite; }
+        
+        /* Glass UI unificado */
+        .glass-panel-ui {
+            background: rgba(15, 15, 15, 0.6);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <div id="root" class="flex-1 w-full"></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        const firebaseConfig = { apiKey: "AIzaSyDr490X-m0dw5wnQaTmyhjjzd1TRJgEMcs", authDomain: "mi-web-app-f0523.firebaseapp.com", projectId: "mi-web-app-f0523", storageBucket: "mi-web-app-f0523.firebasestorage.app", messagingSenderId: "509336040232", appId: "1:509336040232:web:b41a777c6dd63ba350d61d", measurementId: "G-1BFT6DZEV5" };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        window.db = db; window.doc = doc; window.onSnapshot = onSnapshot;
+    </script>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const Scene3D = ({ mode, config }) => {
+            return (
+                <div className="w-full h-[550px] md:h-[650px] relative flex items-center justify-center stage-3d overflow-visible pointer-events-none">
+                    
+                    {/* 1. INPUT */}
+                    <div className="absolute top-[10%] z-20 w-48 h-32 flow-input flex flex-col items-center justify-center">
+                        {mode === 'T2P' && (
+                            <div className="glass-panel-ui p-4 rounded-xl shadow-2xl w-full">
+                                <div className="flex gap-2 mb-3">
+                                    <div className="w-2 h-2 rounded-full bg-red-500/80"></div>
+                                    <div className="w-2 h-2 rounded-full bg-yellow-500/80"></div>
+                                    <div className="w-2 h-2 rounded-full bg-green-500/80"></div>
+                                </div>
+                                <div className="space-y-2">
+                                    <div className="h-1.5 bg-white/20 rounded w-3/4 animate-pulse"></div>
+                                    <div className="h-1.5 bg-white/20 rounded w-1/2 animate-pulse"></div>
+                                </div>
+                                <div className="absolute -right-2 -top-2 bg-teal-500/20 text-teal-300 border border-teal-500/30 text-[9px] px-2 py-0.5 rounded font-bold tracking-wider backdrop-blur-md">PROMPT</div>
+                            </div>
+                        )}
+                        {mode === 'I2I' && (
+                            <div className="relative w-32 h-40 glass-panel-ui rounded-xl overflow-hidden shadow-2xl">
+                                <img src={config.sourceImg || "https://placehold.co/300x400/1a1a1a/FFF?text=Source"} className="w-full h-full object-cover opacity-60" />
+                                <div className="absolute inset-0 bg-grid-white/[0.1] bg-[length:8px_8px]"></div>
+                                <div className="absolute top-2 left-2 bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[8px] px-1.5 rounded font-bold">SOURCE</div>
+                            </div>
+                        )}
+                        {mode === 'F2F' && (
+                            <div className="flex gap-4">
+                                <div className="w-20 h-28 glass-panel-ui rounded-lg overflow-hidden relative transform -rotate-6 shadow-lg">
+                                    <img src={config.sourceImg1 || "https://placehold.co/200x300/1a1a1a/FFF?text=A"} className="w-full h-full object-cover opacity-60" />
+                                </div>
+                                <div className="w-20 h-28 glass-panel-ui rounded-lg overflow-hidden relative transform rotate-6 shadow-lg">
+                                    <img src={config.sourceImg2 || "https://placehold.co/200x300/1a1a1a/FFF?text=B"} className="w-full h-full object-cover opacity-60" />
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* 2. PRISMA NEURAL */}
+                    <div className="relative z-10 w-64 h-24 neural-prism rounded-2xl flex items-center justify-center overflow-visible mt-12">
+                        <div className={`absolute inset-0 -z-10 rounded-2xl opacity-0 aurora-burst bg-gradient-to-r ${config.aurora}`}>
+                            <animate attributeName="opacity" values="0;0;0.7;0;0" dur="4s" repeatCount="indefinite" />
+                        </div>
+                        <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent rounded-2xl pointer-events-none"></div>
+                        <div className="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center bg-black/40 backdrop-blur-xl shadow-[inset_0_0_10px_rgba(255,255,255,0.05)]">
+                            <i className="ph-fill ph-cpu text-white/80 text-xl animate-pulse"></i>
+                        </div>
+                        <div className={`absolute top-0 left-1/4 w-px h-full ${config.laserColor} laser-beam`} style={{animationDelay: '1.8s'}}></div>
+                        <div className={`absolute top-0 right-1/4 w-px h-full ${config.laserColor} laser-beam`} style={{animationDelay: '2.0s'}}></div>
+                        <div className={`absolute top-0 left-1/2 w-8 h-full bg-gradient-to-b from-transparent ${config.beamColor} to-transparent opacity-20`} style={{animationDelay: '1.9s', animationName: 'laser-scan'}}></div>
+                    </div>
+
+                    {/* 3. OUTPUT */}
+                    <div className="absolute bottom-[5%] z-30 w-64 h-48 flow-output flex items-center justify-center">
+                        <div className={`w-full h-full bg-[#0a0a0a] rounded-2xl border ${config.borderColor} overflow-hidden shadow-2xl relative group`}>
+                            <img src={config.resultImg || "https://placehold.co/400x300/1a1a1a/FFF?text=Result"} className="w-full h-full object-cover" />
+                            <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black to-transparent p-4 flex items-end justify-between">
+                                <div>
+                                    <div className="flex items-center gap-1.5 mb-1">
+                                        <div className={`w-1.5 h-1.5 rounded-full ${config.dotColor} animate-pulse`}></div>
+                                        <span className="text-[10px] font-mono text-gray-300">RENDER_COMPLETE</span>
+                                    </div>
+                                    <div className="h-0.5 w-24 bg-gray-800 rounded-full overflow-hidden">
+                                        <div className={`h-full w-full ${config.dotColor}`}></div>
+                                    </div>
+                                </div>
+                                <div className="bg-white/10 p-1 rounded-full backdrop-blur-md">
+                                    <i className="ph-bold ph-check text-white text-xs"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Grid Fondo */}
+                    <div className="absolute inset-0 -z-10" 
+                         style={{
+                             backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)',
+                             backgroundSize: '40px 40px',
+                             transform: 'perspective(500px) rotateX(60deg) translateY(0px) translateZ(-100px)',
+                             opacity: 0.4
+                         }}>
+                    </div>
+                </div>
+            );
+        };
+
+        const defaultData = {
+            "T2P": { title: "Texto a Imagen", engine: "Atlas v0.2", desc: "Cargando...", aurora: "from-teal-500 via-emerald-400 to-transparent", beamColor: "via-teal-500", laserColor: "bg-teal-400", borderColor: "border-teal-500/30", dotColor: "bg-teal-400" },
+            "I2I": { title: "Imagen a Imagen", engine: "Vision Pro", desc: "Cargando...", aurora: "from-purple-600 via-pink-500 to-transparent", beamColor: "via-purple-500", laserColor: "bg-purple-400", borderColor: "border-purple-500/30", dotColor: "bg-purple-400" },
+            "F2F": { title: "Frame a Frame", engine: "Vision Pro", desc: "Cargando...", aurora: "from-blue-600 via-indigo-500 to-transparent", beamColor: "via-blue-500", laserColor: "bg-blue-400", borderColor: "border-blue-500/30", dotColor: "bg-blue-400" }
+        };
+
+        const App = () => {
+            const [activeTab, setActiveTab] = useState("T2P");
+            const [animState, setAnimState] = useState(false);
+            const [data, setData] = useState(defaultData);
+
+            useEffect(() => {
+                if(!window.db) return;
+                const unsub = window.onSnapshot(window.doc(window.db, "guide_config", "main"), (doc) => {
+                    if (doc.exists()) {
+                        const cloudData = doc.data();
+                        const merged = {
+                            "T2P": { ...defaultData.T2P, ...cloudData.T2P },
+                            "I2I": { ...defaultData.I2I, ...cloudData.I2I },
+                            "F2F": { ...defaultData.F2F, ...cloudData.F2F }
+                        };
+                        setData(merged);
+                    }
+                });
+                return () => unsub();
+            }, []);
+
+            const conf = data[activeTab];
+
+            const changeTab = (tab) => {
+                if(tab === activeTab) return;
+                setAnimState(true);
+                setTimeout(() => { setActiveTab(tab); setAnimState(false); }, 400);
+            };
+
+            return (
+                <div className="flex flex-col min-h-screen bg-transparent relative overflow-hidden pb-10">
+                    
+                    {/* Header estilo Index */}
+                    <div className="pt-8 pb-2 text-center z-50 sticky top-0">
+                        <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-1 block">Documentación</span>
+                        <h1 className="text-2xl font-bold tracking-tight text-white drop-shadow-lg">Guía de Modelos</h1>
+                    </div>
+
+                    {/* VISOR 3D */}
+                    <div className="w-full relative mx-auto mt-[-20px]">
+                         {/* Luz ambiental */}
+                        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[80%] bg-gradient-radial ${activeTab==='T2P'?'from-teal-900/20':activeTab==='I2I'?'from-purple-900/20':'from-blue-900/20'} to-transparent blur-3xl -z-10 transition-colors duration-1000 pointer-events-none`}></div>
+                        
+                        <div className={`w-full transition-all duration-500 ${animState ? 'opacity-0 scale-95 blur-md' : 'opacity-100 scale-100 blur-0'}`}>
+                            <Scene3D mode={activeTab} config={conf} />
+                        </div>
+                    </div>
+
+                    {/* PANEL INFERIOR (Glass UI) */}
+                    <div className="relative z-50 px-6 max-w-2xl mx-auto -mt-24">
+                        
+                        {/* Selector Flotante */}
+                        <div className="flex justify-center mb-6 float-slow">
+                            <div className="glass-panel-ui p-1.5 rounded-full flex gap-1 shadow-2xl">
+                                {Object.keys(defaultData).map(key => (
+                                    <button
+                                        key={key}
+                                        onClick={() => changeTab(key)}
+                                        className={`px-6 py-2.5 rounded-full text-xs font-bold transition-all duration-300 uppercase tracking-wider ${
+                                            activeTab === key 
+                                            ? 'bg-white text-black shadow-lg scale-105' 
+                                            : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                        }`}
+                                    >
+                                        {key}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Tarjeta de Información */}
+                        <div className="glass-panel-ui p-8 rounded-3xl text-center space-y-4 shadow-xl border-t border-white/10">
+                            <h2 className={`text-2xl font-bold text-white transition-all duration-500 flex items-center justify-center gap-3 ${animState ? 'translate-y-4 opacity-0' : 'translate-y-0 opacity-100'}`}>
+                                {conf.title} 
+                                <span className={`text-[10px] px-2 py-0.5 rounded border border-white/10 bg-white/5 tracking-wider uppercase ${activeTab==='T2P'?'text-teal-400':activeTab==='I2I'?'text-purple-400':'text-blue-400'}`}>
+                                    {conf.engine}
+                                </span>
+                            </h2>
+                            <p className={`text-sm text-gray-400 leading-relaxed font-normal max-w-md mx-auto transition-all duration-700 delay-100 ${animState ? 'opacity-0' : 'opacity-100'}`}>
+                                {conf.desc}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
