@@ -575,7 +575,7 @@
         const geminiApiKey = "AIzaSyD2ZNMjVegRNFGOxsMQKeIQplAqBWGTEqs"; // API Key insertada en runtime
 
         async function callGeminiAPI(userPrompt) {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite-preview-02-05:generateContent?key=${geminiApiKey}`;
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${geminiApiKey}`;
             const payload = {
                 contents: [{ parts: [{ text: userPrompt }] }]
             };
