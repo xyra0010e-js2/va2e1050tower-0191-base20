@@ -732,12 +732,20 @@
             btn.disabled = true;
 
             const promptForGemini = `
-                Generate a COMPLETELY RANDOM and creative JSON script for a short 3D animation scene of many humor topics of all kinds of genres.
-                Surprise me with the genre.
-                
-                CRITICAL INSTRUCTIONS:
-                1. The total spoken dialogue in the scene MUST be approximately 7 seconds long total. Split this time between the generated characters.
-                2. The 'dialogue' text MUST BE IN SPANISH (Español). This is mandatory.
+                Generate a COMPLETELY RANDOM and creative JSON script for a short 3D animation scene and realistic scene.
+    
+    IMPORTANT: FORCE VARIETY IN GENRE. Do NOT default to Sci-Fi or Space.
+    Please pick one randomly from this list: 
+    - Medieval Fantasy (Knights, Dragons, Castles)
+    - Modern Slice of Life (Beach, Supermarket, School, Office, Park)
+    - Historical (Victorian, Ancient Rome, Vikings)
+    - Adventure (Jungle, Desert, Mountains)
+    - Horror / Mystery
+    - Comedy / Sitcom
+    
+    CRITICAL INSTRUCTIONS:
+    1. The total spoken dialogue in the scene MUST be approximately 7 seconds long total. Split this time between the generated characters.
+    2. The 'dialogue' text MUST BE IN SPANISH  (Español). This is mandatory.
                 
                 Structure:
                 {
@@ -1070,4 +1078,4 @@
         function upUI(playing){ if(playing){ vr.classList.remove('spin-paused'); }else{ vr.classList.add('spin-paused'); } }
     </script>
 </body>
-    </html>
+                </html>
