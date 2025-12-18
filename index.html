@@ -176,7 +176,7 @@
                 <div class="flex gap-2 items-start">
                     <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex-shrink-0"></div>
                     <div class="bg-white/5 rounded-lg rounded-tl-none p-2 text-gray-300 border border-white/5">
-                        Hola, soy tu asistente creativo. ¿En qué te ayudo con tu script o prompt hoy?
+                        Hola, soy tu asistente creativo. Asegúrate de configurar tu API Key para empezar.
                     </div>
                 </div>
             </div>
@@ -235,10 +235,18 @@
             </button>
             <div class="h-px bg-white/10 my-4 mx-3"></div>
             <div class="text-xs font-bold text-gray-400 uppercase tracking-widest px-3 mb-2">Herramientas AI</div>
+            
             <button onclick="switchView('eraser')" class="w-full text-left p-3 rounded-xl flex items-center gap-3 hover:bg-white/5 text-gray-300 transition-all group border border-transparent hover:border-white/10">
                 <div class="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center text-red-400 group-hover:scale-110 transition-transform"><i class="ph-fill ph-eraser text-lg"></i></div>
                 <span class="font-medium group-hover:translate-x-1 transition-transform">Borrador Mágico</span>
             </button>
+            
+            <!-- NUEVO BOTÓN SORA -->
+            <button onclick="switchView('sora')" class="w-full text-left p-3 rounded-xl flex items-center gap-3 hover:bg-white/5 text-gray-300 transition-all group border border-transparent hover:border-white/10">
+                <div class="w-8 h-8 rounded-lg bg-pink-500/10 flex items-center justify-center text-pink-400 group-hover:scale-110 transition-transform"><i class="ph-fill ph-film-slate text-lg"></i></div>
+                <span class="font-medium group-hover:translate-x-1 transition-transform">Sora2Prompt</span>
+            </button>
+
             <button onclick="switchView('vision')" class="w-full text-left p-3 rounded-xl flex items-center gap-3 hover:bg-white/5 text-gray-300 transition-all group border border-transparent hover:border-white/10">
                 <div class="w-8 h-8 rounded-lg bg-teal-500/10 flex items-center justify-center text-teal-400 group-hover:scale-110 transition-transform"><i class="ph-fill ph-magic-wand text-lg"></i></div>
                 <span class="font-medium group-hover:translate-x-1 transition-transform">Vision Prompt</span>
@@ -246,6 +254,13 @@
             <button onclick="switchView('json')" class="w-full text-left p-3 rounded-xl flex items-center gap-3 hover:bg-white/5 text-gray-300 transition-all group border border-transparent hover:border-white/10">
                 <div class="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform"><i class="ph-fill ph-code text-lg"></i></div>
                 <span class="font-medium group-hover:translate-x-1 transition-transform">Json Prompt</span>
+            </button>
+            
+            <div class="h-px bg-white/10 my-4 mx-3"></div>
+            <!-- BOTÓN CONFIGURACIÓN -->
+            <button onclick="switchView('settings')" class="w-full text-left p-3 rounded-xl flex items-center gap-3 hover:bg-white/5 text-gray-300 transition-all group border border-transparent hover:border-white/10">
+                <div class="w-8 h-8 rounded-lg bg-gray-500/10 flex items-center justify-center text-gray-400 group-hover:scale-110 transition-transform"><i class="ph-fill ph-gear text-lg"></i></div>
+                <span class="font-medium group-hover:translate-x-1 transition-transform">Configuración</span>
             </button>
         </div>
         <div class="p-4 border-t border-white/5">
@@ -351,6 +366,59 @@
     <!-- VISTA: BORRADOR -->
     <div id="view-eraser" class="hidden pt-16 h-screen w-full bg-black relative z-10 flex flex-col">
         <iframe src="borrador.html" class="flex-1 w-full border-none" allow="camera; photos"></iframe>
+    </div>
+    
+    <!-- NUEVA VISTA: SORA -->
+    <div id="view-sora" class="hidden pt-16 h-screen w-full bg-black relative z-10 flex flex-col">
+        <iframe src="Sora2Prompt.html" class="flex-1 w-full border-none" allow="clipboard-read; clipboard-write"></iframe>
+    </div>
+    
+    <!-- NUEVA VISTA: CONFIGURACIÓN -->
+    <div id="view-settings" class="hidden pt-24 px-4 min-h-screen bg-[#050505]">
+        <div class="max-w-2xl mx-auto animate-fade-in space-y-8">
+            <div class="text-center mb-10">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/5 mb-6 border border-white/10">
+                    <i class="ph-fill ph-gear text-3xl text-gray-300"></i>
+                </div>
+                <h2 class="text-3xl md:text-4xl font-bold text-white tracking-tight">Configuración</h2>
+                <p class="text-gray-400 mt-2">Gestiona tus claves de acceso y preferencias.</p>
+            </div>
+            
+            <div class="glass-panel p-8 rounded-3xl shadow-2xl backdrop-blur-xl border border-white/10 space-y-6">
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                         <label class="text-sm font-bold text-teal-400 uppercase tracking-widest flex items-center gap-2">
+                            <i class="ph-bold ph-key"></i> Gemini API Key
+                        </label>
+                        <span id="api-status" class="text-[10px] uppercase font-bold text-gray-500 px-2 py-1 rounded bg-white/5">Sin configurar</span>
+                    </div>
+                    <p class="text-xs text-gray-500 leading-relaxed">
+                        Ingresa tu API Key de Google Gemini para habilitar las funciones de inteligencia artificial. 
+                        Esta clave se guardará únicamente en el almacenamiento local de tu navegador (<span class="text-teal-500 font-mono">localStorage</span>) y nunca será enviada a servidores externos de la aplicación.
+                    </p>
+                    
+                    <div class="relative group">
+                        <input type="password" id="settings-api-key" placeholder="Pegar API Key aquí (AIzaSy...)" 
+                            class="glass-input w-full rounded-xl py-4 pl-4 pr-12 text-sm text-white focus:ring-1 focus:ring-teal-500/50 font-mono tracking-wide placeholder-gray-600 transition-all">
+                        <button onclick="toggleKeyVisibility()" class="absolute right-4 top-4 text-gray-500 hover:text-white transition-colors">
+                            <i id="eye-icon" class="ph-bold ph-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="pt-4 border-t border-white/5">
+                    <button onclick="saveSettings()" class="w-full bg-gradient-to-r from-teal-600 to-blue-600 hover:from-teal-500 hover:to-blue-500 text-white font-bold py-4 rounded-xl shadow-lg active:scale-[0.98] transition-all flex justify-center items-center gap-2">
+                        <i class="ph-bold ph-floppy-disk"></i> Guardar Configuración
+                    </button>
+                </div>
+            </div>
+            
+            <div class="text-center">
+                 <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-xs text-gray-500 hover:text-white underline decoration-gray-700 hover:decoration-white transition-colors">
+                    ¿No tienes una API Key? Consíguela aquí
+                </a>
+            </div>
+        </div>
     </div>
 
     <!-- VISTA 3: VISION PROMPT (Mejorado) -->
@@ -563,19 +631,83 @@
         };
         
         window.switchView = (viewName) => {
-            ['home', 'gallery', 'vision', 'json', 'eraser', 'guide'].forEach(v => { document.getElementById(`view-${v}`).classList.add('hidden'); document.getElementById(`view-${v}`).classList.remove('animate-fade-in'); });
-            const target = document.getElementById(`view-${viewName}`); target.classList.remove('hidden'); void target.offsetWidth; target.classList.add('animate-fade-in');
+            ['home', 'gallery', 'vision', 'json', 'eraser', 'guide', 'settings', 'sora'].forEach(v => { 
+                const el = document.getElementById(`view-${v}`);
+                if(el) { el.classList.add('hidden'); el.classList.remove('animate-fade-in'); }
+            });
+            const target = document.getElementById(`view-${viewName}`); 
+            if(target) { target.classList.remove('hidden'); void target.offsetWidth; target.classList.add('animate-fade-in'); }
             if(window.innerWidth < 1024) toggleSidebar();
         };
 
         /* -----------------------------------------------------
-           GEMINI API INTEGRATION & LOGIC
+           API KEY MANAGEMENT & GEMINI LOGIC
            ----------------------------------------------------- */
         
-        const geminiApiKey = "AIzaSyD2ZNMjVegRNFGOxsMQKeIQplAqBWGTEqs"; // API Key insertada en runtime
+        // 1. Funciones de Configuración Local
+        const API_STORAGE_KEY = 'gemini_api_key_local';
 
+        window.toggleKeyVisibility = () => {
+            const input = document.getElementById('settings-api-key');
+            const icon = document.getElementById('eye-icon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'ph-bold ph-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'ph-bold ph-eye';
+            }
+        };
+
+        window.saveSettings = () => {
+            const input = document.getElementById('settings-api-key');
+            const key = input.value.trim();
+            if (key) {
+                localStorage.setItem(API_STORAGE_KEY, key);
+                updateApiStatusUI();
+                alert("Configuración guardada correctamente.");
+            } else {
+                alert("Por favor ingresa una API Key válida.");
+            }
+        };
+
+        function getStoredApiKey() {
+            return localStorage.getItem(API_STORAGE_KEY);
+        }
+
+        function updateApiStatusUI() {
+            const statusEl = document.getElementById('api-status');
+            const inputEl = document.getElementById('settings-api-key');
+            const key = getStoredApiKey();
+            
+            if (key) {
+                statusEl.innerText = "Configurado";
+                statusEl.classList.remove('text-gray-500', 'bg-white/5');
+                statusEl.classList.add('text-teal-400', 'bg-teal-500/10', 'border', 'border-teal-500/20');
+                inputEl.value = key; // Rellenar input al cargar
+            } else {
+                statusEl.innerText = "Sin configurar";
+                statusEl.className = "text-[10px] uppercase font-bold text-gray-500 px-2 py-1 rounded bg-white/5";
+            }
+        }
+
+        // Cargar estado inicial
+        updateApiStatusUI();
+
+
+        // 2. Función de Llamada IA (Actualizada para usar LocalStorage)
         async function callGeminiAPI(userPrompt) {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${geminiApiKey}`;
+            const apiKey = getStoredApiKey();
+            
+            // Validación de seguridad antes de llamar
+            if (!apiKey) {
+                if(confirm("Se requiere una API Key de Gemini para usar esta función. ¿Deseas configurarla ahora?")) {
+                    switchView('settings');
+                }
+                return "Error: API Key no configurada.";
+            }
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`;
             const payload = {
                 contents: [{ parts: [{ text: userPrompt }] }]
             };
@@ -586,11 +718,17 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
+                
+                if (!response.ok) {
+                    const errData = await response.json();
+                    throw new Error(errData.error?.message || "Error en la petición");
+                }
+
                 const data = await response.json();
                 return data.candidates?.[0]?.content?.parts?.[0]?.text || "Error en la respuesta de Gemini.";
             } catch (error) {
                 console.error("Gemini Error:", error);
-                return "Error de conexión con Gemini.";
+                return `Error de conexión: ${error.message}. Verifica tu API Key.`;
             }
         }
 
@@ -626,11 +764,15 @@
             `;
 
             const result = await callGeminiAPI(promptForGemini);
-            output.innerText = result.trim();
-            
-            // Animation
-            const box = document.getElementById('vision-controls-box'); 
-            box.classList.remove('aurora-active'); void box.offsetWidth; box.classList.add('aurora-active');
+            // Verificar si devolvió error de API Key
+            if(result.startsWith("Error:")) {
+                output.innerText = "// Error: Configura tu API Key";
+            } else {
+                output.innerText = result.trim();
+                // Animation
+                const box = document.getElementById('vision-controls-box'); 
+                box.classList.remove('aurora-active'); void box.offsetWidth; box.classList.add('aurora-active');
+            }
 
             // Reset UI
             btn.innerHTML = originalText;
@@ -699,25 +841,29 @@
             `;
 
             let result = await callGeminiAPI(promptForGemini);
-            result = result.replace(/```json/g, '').replace(/```/g, '').trim();
-
-            try {
-                const parsed = JSON.parse(result);
-                // Actualizar UI (Textareas)
-                const charCards = document.querySelectorAll('[id^="char-card-"]');
-                if (parsed.characters && parsed.characters.length === charCards.length) {
-                    parsed.characters.forEach((char, index) => {
-                        const card = charCards[index];
-                        card.querySelector('.j-char-dial').value = char.dialogue;
-                        if(char.voice?.action) card.querySelector('.j-char-act').value = char.voice.action;
-                    });
+            
+            if(result.startsWith("Error:")) {
+                 output.innerText = "// Error: " + result;
+            } else {
+                result = result.replace(/```json/g, '').replace(/```/g, '').trim();
+                try {
+                    const parsed = JSON.parse(result);
+                    // Actualizar UI (Textareas)
+                    const charCards = document.querySelectorAll('[id^="char-card-"]');
+                    if (parsed.characters && parsed.characters.length === charCards.length) {
+                        parsed.characters.forEach((char, index) => {
+                            const card = charCards[index];
+                            card.querySelector('.j-char-dial').value = char.dialogue;
+                            if(char.voice?.action) card.querySelector('.j-char-act').value = char.voice.action;
+                        });
+                    }
+                    
+                    const prettyJson = JSON.stringify(parsed, null, 2);
+                    output.innerText = prettyJson;
+                } catch (e) {
+                    console.error(e);
+                    output.innerText = "Error procesando la respuesta de la IA.\n" + result;
                 }
-                
-                const prettyJson = JSON.stringify(parsed, null, 2);
-                output.innerText = prettyJson;
-            } catch (e) {
-                console.error(e);
-                output.innerText = "Error procesando la respuesta de la IA.\n" + result;
             }
             btn.innerHTML = originalText;
             btn.disabled = false;
@@ -762,8 +908,12 @@
             `;
 
             let result = await callGeminiAPI(promptForGemini);
-            result = result.replace(/```json/g, '').replace(/```/g, '').trim();
-            output.innerText = result;
+             if(result.startsWith("Error:")) {
+                 output.innerText = "// Error: " + result;
+            } else {
+                result = result.replace(/```json/g, '').replace(/```/g, '').trim();
+                output.innerText = result;
+            }
             
             btn.innerHTML = originalText;
             btn.disabled = false;
@@ -1079,4 +1229,4 @@
         function upUI(playing){ if(playing){ vr.classList.remove('spin-paused'); }else{ vr.classList.add('spin-paused'); } }
     </script>
 </body>
-                </html>
+    </html>
